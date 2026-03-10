@@ -635,44 +635,24 @@ cashify_nps = nps_df.loc[nps_df["platform"].str.lower().eq("cashify"), "nps"].ma
 # =================================================
 st.markdown(f"""
 <div class="hero">
-    <div style="
-        display:flex;
-        align-items:flex-start;
-        justify-content:space-between;
-        gap:1rem;
-        flex-wrap:wrap;
-    ">
-        <div style="flex:1; min-width:320px;">
-            <h1 style="margin:0 0 0.4rem 0;">Cashify Consumer Intelligence Dashboard</h1>
-            <div class="hero-sub">
-                Consumer view for the <b>{journey}</b> journey across awareness, brand strength, consideration, recommendation, source of awareness, and choice drivers.
-            </div>
-        </div>
-
-        <div style="width:220px; flex:0 0 220px;">
-            <div style="
-                background: rgba(255,255,255,0.96);
-                border-radius: 20px;
-                padding: 0.9rem 1rem 0.85rem 1rem;
-                box-shadow: 0 10px 24px rgba(20, 33, 61, 0.08);
-            ">
-                <div style="font-size:0.78rem; color:#6b7280; margin-bottom:0.18rem;">Filtered Sample</div>
-                <div style="font-size:1.9rem; font-weight:800; color:#14213d; line-height:1.05;">{len(filtered)}</div>
-                <div style="font-size:0.75rem; color:#6b7280; margin-top:0.15rem;">Respondents in current view</div>
-            </div>
-        </div>
+    <h1 style="margin:0 0 0.4rem 0;">Cashify Consumer Intelligence Dashboard</h1>
+    <div class="hero-sub">
+        Consumer view for the <b>{journey}</b> journey across awareness, brand strength, consideration, recommendation, source of awareness, and choice drivers.
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-k1, k2, k3, k4 = st.columns(4)
+k1, k2, k3, k4, k5 = st.columns(5)
+
 with k1:
-    kpi("Cashify TOM", f"{cashify_tom:.1f}%", "Mentioned first")
+    kpi("Filtered Sample", f"{len(filtered)}", "Respondents in current view")
 with k2:
-    kpi("Cashify Aided Awareness", f"{cashify_aw:.1f}%", "Recognised from list")
+    kpi("Cashify TOM", f"{cashify_tom:.1f}%", "Mentioned first")
 with k3:
-    kpi("Cashify Consideration", f"{cashify_cons:.1f}%", "In next-time shortlist")
+    kpi("Cashify Aided Awareness", f"{cashify_aw:.1f}%", "Recognised from list")
 with k4:
+    kpi("Cashify Consideration", f"{cashify_cons:.1f}%", "In next-time shortlist")
+with k5:
     kpi("Cashify NPS", "NA" if pd.isna(cashify_nps) else f"{cashify_nps:.1f}", "Recommendation score")
 
 tabs = st.tabs([
