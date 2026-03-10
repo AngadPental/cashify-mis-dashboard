@@ -41,8 +41,8 @@ st.markdown("""
 @st.cache_data
 def load_data():
     # PASTE THE LINKS YOU COPIED HERE
-    buyback_url = "https://raw.githubusercontent.com/L-S-D-25/cashify-mis-dashboard/main/buyback.csv"
-    refurb_url = "https://raw.githubusercontent.com/L-S-D-25/cashify-mis-dashboard/main/refurbished.csv"
+    buyback_url = "https://github.com/AngadPental/cashify-mis-dashboard/raw/refs/heads/main/buyback.csv"
+    refurb_url = "https://github.com/AngadPental/cashify-mis-dashboard/raw/refs/heads/main/refurbished.csv"
     
     try:
         # We add storage_options to handle any header issues
