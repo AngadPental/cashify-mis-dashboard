@@ -40,11 +40,15 @@ st.markdown("""
 # ==========================================
 @st.cache_data
 def load_data():
+    # Direct RAW links to your GitHub files
+    buyback_url = "https://raw.githubusercontent.com/L-S-D-25/cashify-mis-dashboard/main/Live%20Brand%20Study%20-%20CASHIFY%20Buyback%20-%20Final%20data.xlsx%20-%20Group%206%20Data.csv"
+    refurb_url = "https://raw.githubusercontent.com/L-S-D-25/cashify-mis-dashboard/main/Live%20Brand%20Study%20-%20CASHIFY%20-%20Refurbished_data.xlsx%20-%20Group%206%20Data.csv"
+    
     try:
-        buyback_df = pd.read_csv('Live Brand Study - CASHIFY Buyback - Final data.xlsx - Group 6 Data.csv')
-        refurb_df = pd.read_csv('Live Brand Study - CASHIFY - Refurbished_data.xlsx - Group 6 Data.csv')
+        buyback_df = pd.read_csv(buyback_url)
+        refurb_df = pd.read_csv(refurb_url)
     except Exception as e:
-        st.error(f"Error loading data: Please ensure 'buyback.csv' and 'refurbished.csv' are in the same folder. ({e})")
+        st.error(f"Error loading data from GitHub: {e}")
         return pd.DataFrame(), pd.DataFrame()
     return buyback_df, refurb_df
 
