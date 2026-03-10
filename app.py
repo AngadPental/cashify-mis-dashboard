@@ -13,6 +13,18 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# -------------------------------------------------
+# Paths for local + GitHub/Streamlit Cloud deploy
+# -------------------------------------------------
+BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR / "data"
+
+BUYBACK_DEFAULT = DATA_DIR / "Live Brand Study - CASHIFY Buyback - Final data.xlsx"
+REFURB_DEFAULT = DATA_DIR / "Live Brand Study - CASHIFY - Refurbished_data.xlsx"
+
+# -------------------------------------------------
+# Styling
+# -------------------------------------------------
 st.markdown("""
 <style>
 :root {
@@ -24,43 +36,88 @@ st.markdown("""
     --border: #e2e8f0;
     --shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
 }
-.main { background: linear-gradient(180deg, #f8fafc 0%, #f5f7fb 100%); }
-.block-container { padding-top: 1.3rem; padding-bottom: 2rem; max-width: 1400px; }
+.main {
+    background: linear-gradient(180deg, #f8fafc 0%, #f5f7fb 100%);
+}
+.block-container {
+    padding-top: 1.3rem;
+    padding-bottom: 2rem;
+    max-width: 1400px;
+}
 .hero {
     background: linear-gradient(135deg, rgba(20,184,166,0.12), rgba(14,165,233,0.10));
-    border: 1px solid var(--border); border-radius: 24px; padding: 1.4rem 1.5rem;
-    box-shadow: var(--shadow); margin-bottom: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 1.4rem 1.5rem;
+    box-shadow: var(--shadow);
+    margin-bottom: 1rem;
 }
 .card, .kpi-card {
-    background: var(--card); border: 1px solid var(--border); border-radius: 22px;
-    padding: 1rem; box-shadow: var(--shadow);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 1rem;
+    box-shadow: var(--shadow);
 }
-.kpi-label { color: var(--muted); font-size: 0.85rem; margin-bottom: 0.3rem; }
-.kpi-value { color: var(--text); font-size: 1.8rem; font-weight: 700; line-height: 1.1; }
-.kpi-note, .small-note { color: var(--muted); font-size: 0.8rem; }
+.kpi-label {
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-bottom: 0.3rem;
+}
+.kpi-value {
+    color: var(--text);
+    font-size: 1.8rem;
+    font-weight: 700;
+    line-height: 1.1;
+}
+.kpi-note, .small-note {
+    color: var(--muted);
+    font-size: 0.8rem;
+}
 .section-tag {
-    display: inline-block; font-size: 0.78rem; color: #0f766e; background: rgba(20,184,166,0.12);
-    border: 1px solid rgba(20,184,166,0.18); padding: 0.22rem 0.55rem; border-radius: 999px; margin-bottom: 0.65rem;
+    display: inline-block;
+    font-size: 0.78rem;
+    color: #0f766e;
+    background: rgba(20,184,166,0.12);
+    border: 1px solid rgba(20,184,166,0.18);
+    padding: 0.22rem 0.55rem;
+    border-radius: 999px;
+    margin-bottom: 0.65rem;
 }
 .insight {
-    border-left: 4px solid var(--accent); background: rgba(255,255,255,0.8);
-    border-radius: 14px; padding: 0.85rem 0.95rem; color: var(--text); margin-top: 0.5rem;
+    border-left: 4px solid var(--accent);
+    background: rgba(255,255,255,0.8);
+    border-radius: 14px;
+    padding: 0.85rem 0.95rem;
+    color: var(--text);
+    margin-top: 0.5rem;
 }
-.footer-note { color: var(--muted); font-size: 0.78rem; margin-top: 1rem; }
-[data-testid="stSidebar"] { background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%); border-right: 1px solid #e5e7eb; }
+.footer-note {
+    color: var(--muted);
+    font-size: 0.78rem;
+    margin-top: 1rem;
+}
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border-right: 1px solid #e5e7eb;
+}
 </style>
 """, unsafe_allow_html=True)
 
-BUYBACK_DEFAULT = "Live Brand Study - CASHIFY Buyback - Final data.xlsx"
-REFURB_DEFAULT = "Live Brand Study - CASHIFY - Refurbished_data.xlsx"
-
+# -------------------------------------------------
+# Helpers
+# -------------------------------------------------
 def split_multi(value):
     if pd.isna(value):
         return []
     txt = str(value).replace("\n", ",").strip()
     if not txt or txt.lower() in {"none", "no", "nope", "nan"}:
         return []
-    return [p.strip() for p in re.split(r"\s*,\s*", txt) if p.strip() and p.strip().lower() not in {"none", "never heard of any"}]
+    return [
+        p.strip()
+        for p in re.split(r"\s*,\s*", txt)
+        if p.strip() and p.strip().lower() not in {"none", "never heard of any"}
+    ]
 
 def percent(n, d):
     return 0 if d == 0 else round(100 * n / d, 1)
@@ -125,7 +182,9 @@ def parse_multiselect_counts(series):
     for val in series.dropna():
         for item in split_multi(val):
             bucket[item] = bucket.get(item, 0) + 1
-    out = pd.DataFrame([{"item": k, "count": v, "pct": v / max(base, 1) * 100} for k, v in bucket.items()])
+    out = pd.DataFrame(
+        [{"item": k, "count": v, "pct": v / max(base, 1) * 100} for k, v in bucket.items()]
+    )
     if not out.empty:
         out = out.sort_values(["count", "item"], ascending=[False, True]).reset_index(drop=True)
     return out
@@ -156,7 +215,14 @@ def nps_table(df, platform_cols):
     for platform, col in platform_cols.items():
         scores = df[col].apply(safe_int).dropna()
         if scores.empty:
-            rows.append({"platform": platform, "nps": np.nan, "promoters": 0, "passives": 0, "detractors": 0, "base": 0})
+            rows.append({
+                "platform": platform,
+                "nps": np.nan,
+                "promoters": 0,
+                "passives": 0,
+                "detractors": 0,
+                "base": 0
+            })
             continue
         p = int((scores >= 9).sum())
         pa = int(((scores >= 7) & (scores <= 8)).sum())
@@ -285,8 +351,13 @@ def kpi(label, value, note=""):
         unsafe_allow_html=True
     )
 
+# -------------------------------------------------
+# Sidebar
+# -------------------------------------------------
 st.sidebar.title("Dashboard Controls")
-use_upload = st.sidebar.toggle("Use uploaded Excel files", value=False)
+
+# keep uploader as a fallback even after GitHub deploy
+use_upload = st.sidebar.toggle("Use uploaded Excel files instead", value=False)
 
 if use_upload:
     buy_file = st.sidebar.file_uploader("Upload Buyback workbook", type=["xlsx"], key="buy")
@@ -298,15 +369,21 @@ if use_upload:
         )
         st.stop()
 else:
-    buy_path = Path(BUYBACK_DEFAULT)
-    ref_path = Path(REFURB_DEFAULT)
-    if not (buy_path.exists() and ref_path.exists()):
-        st.error("Default Excel files were not found in the same folder as app.py. Turn on uploads in the sidebar or place both workbooks beside the app.")
+    if not BUYBACK_DEFAULT.exists() or not REFURB_DEFAULT.exists():
+        st.error(
+            "Excel files not found in the repo. Make sure both files are inside the 'data' folder in GitHub."
+        )
+        st.code(
+            "data/\n"
+            "├── Live Brand Study - CASHIFY Buyback - Final data.xlsx\n"
+            "└── Live Brand Study - CASHIFY - Refurbished_data.xlsx"
+        )
         st.stop()
-    buy_file = str(buy_path)
-    ref_file = str(ref_path)
+    buy_file = BUYBACK_DEFAULT
+    ref_file = REFURB_DEFAULT
 
 buy_df, buy_map, ref_df, ref_map = load_datasets(buy_file, ref_file)
+
 journey = st.sidebar.radio("Consumer Journey", ["Buyback", "Refurbished"])
 df = buy_df.copy() if journey == "Buyback" else ref_df.copy()
 qmap = buy_map if journey == "Buyback" else ref_map
@@ -322,6 +399,9 @@ income = mfilter("Household Income", "Q8")
 work = mfilter("Working Status", "Q7")
 filtered = filter_df(df, city, gender, age, income, work)
 
+# -------------------------------------------------
+# Header
+# -------------------------------------------------
 st.markdown(f"""
 <div class="hero">
     <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
@@ -344,6 +424,7 @@ st.markdown(f"""
 tom, spontaneous, aided = awareness_bundle(filtered, qmap)
 consider_df = binary_platform_metric(filtered, get_platform_cols(filtered, qmap, "Q15"), positive_values=["Selected"])
 nps_df = nps_table(filtered, get_platform_cols(filtered, qmap, "Q16"))
+
 cashify_tom = tom.loc[tom["platform"].str.lower().eq("cashify"), "pct"].max() if not tom.empty else 0
 cashify_aw = aided.loc[aided["platform"].str.lower().eq("cashify"), "pct"].max() if not aided.empty else 0
 cashify_cons = consider_df.loc[consider_df["platform"].str.lower().eq("cashify"), "pct"].max() if not consider_df.empty else 0
@@ -366,13 +447,14 @@ tabs = st.tabs([
     "Consideration & NPS",
     "Sources",
     "Drivers & Barriers",
-    "Decision Support"
+    "Decision Support",
 ])
 
 with tabs[0]:
     st.markdown('<div class="section-tag">Context</div>', unsafe_allow_html=True)
     st.subheader("Study Overview & Sample Snapshot")
     left, right = st.columns([1.2, 1])
+
     with left:
         st.markdown("""
         <div class="card">
@@ -385,6 +467,7 @@ with tabs[0]:
             </ul>
         </div>
         """, unsafe_allow_html=True)
+
     with right:
         st.markdown('<div class="card">', unsafe_allow_html=True)
         demo_cols = [c for c in ["Q1", "Q2", "Q3", "Q7", "Q8"] if c in filtered.columns]
@@ -396,29 +479,33 @@ with tabs[0]:
             frames.append(vc.head(5))
         demo_df = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
         plot_bar(demo_df, x="Option", y="Count", color="Question", height=420)
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
 with tabs[1]:
     st.markdown('<div class="section-tag">Awareness</div>', unsafe_allow_html=True)
     st.subheader("Saliency / Brand Awareness Analysis")
+
     a1, a2, a3 = st.columns(3)
     with a1:
         st.markdown('<div class="card"><h4 style="margin-top:0;">Top-of-Mind Recall</h4>', unsafe_allow_html=True)
         plot_bar(tom.sort_values("pct", ascending=True).tail(10), x="pct", y="platform", orientation="h", height=360)
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
     with a2:
         st.markdown('<div class="card"><h4 style="margin-top:0;">Spontaneous Awareness</h4>', unsafe_allow_html=True)
         plot_bar(spontaneous.sort_values("pct", ascending=True).tail(10), x="pct", y="platform", orientation="h", height=360)
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
     with a3:
         st.markdown('<div class="card"><h4 style="margin-top:0;">Aided Awareness</h4>', unsafe_allow_html=True)
         plot_bar(aided.sort_values("pct", ascending=True).tail(10), x="pct", y="platform", orientation="h", height=360)
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
 with tabs[2]:
     st.markdown('<div class="section-tag">Funnel</div>', unsafe_allow_html=True)
     st.subheader("Brand Health Funnel")
     funnel_df = build_health_funnel(filtered, qmap)
+
     if not funnel_df.empty:
         top_platforms = funnel_df.groupby("platform")["pct"].max().sort_values(ascending=False).head(6).index.tolist()
         chart_df = funnel_df[funnel_df["platform"].isin(top_platforms)]
@@ -443,15 +530,18 @@ with tabs[2]:
 with tabs[3]:
     st.markdown('<div class="section-tag">Conversion</div>', unsafe_allow_html=True)
     st.subheader("Consideration & NPS")
+
     l1, l2 = st.columns(2)
     with l1:
         st.markdown('<div class="card"><h4 style="margin-top:0;">Consideration Set</h4>', unsafe_allow_html=True)
         plot_bar(consider_df.sort_values("pct", ascending=True), x="pct", y="platform", orientation="h", height=420)
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
     with l2:
         st.markdown('<div class="card"><h4 style="margin-top:0;">NPS by Platform</h4>', unsafe_allow_html=True)
         plot_bar(nps_df.sort_values("nps", ascending=True), x="nps", y="platform", orientation="h", height=420)
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
     if not nps_df.empty:
         melt = nps_df.melt(
             id_vars=["platform", "base", "nps"],
@@ -466,20 +556,23 @@ with tabs[4]:
     st.markdown('<div class="section-tag">Channels</div>', unsafe_allow_html=True)
     st.subheader("Source of Awareness")
     source_df = source_matrix(filtered, qmap)
+
     s1, s2 = st.columns([1.25, 0.75])
     with s1:
         st.markdown('<div class="card"><h4 style="margin-top:0;">Platform × Source Heatmap</h4>', unsafe_allow_html=True)
         plot_heatmap(source_df, "platform", "source", "count", height=470)
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
     with s2:
         st.markdown('<div class="card"><h4 style="margin-top:0;">Top Awareness Sources</h4>', unsafe_allow_html=True)
         top_sources = source_df.groupby("source", as_index=False)["count"].sum().sort_values("count", ascending=True) if not source_df.empty else pd.DataFrame()
         plot_bar(top_sources.tail(10), x="count", y="source", orientation="h", height=470)
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
 with tabs[5]:
     st.markdown('<div class="section-tag">Drivers</div>', unsafe_allow_html=True)
     st.subheader("Choice Drivers, Barriers & Category Fears")
+
     d1, d2 = st.columns(2)
     with d1:
         st.markdown('<div class="card"><h4 style="margin-top:0;">Why Cashify was chosen</h4>', unsafe_allow_html=True)
@@ -489,7 +582,8 @@ with tabs[5]:
         else:
             plot_bar(chosen_cashify.sort_values("weighted_score", ascending=True), x="weighted_score", y="factor", orientation="h", height=420)
             st.dataframe(chosen_cashify, use_container_width=True, hide_index=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
     with d2:
         st.markdown('<div class="card"><h4 style="margin-top:0;">Why another platform was chosen</h4>', unsafe_allow_html=True)
         chosen_other = ranking_weighted_scores(filtered, qmap, "Q21A")
@@ -498,13 +592,15 @@ with tabs[5]:
         else:
             plot_bar(chosen_other.sort_values("weighted_score", ascending=True), x="weighted_score", y="factor", orientation="h", height=420)
             st.dataframe(chosen_other, use_container_width=True, hide_index=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
     b1, b2 = st.columns(2)
     with b1:
         st.markdown('<div class="card"><h4 style="margin-top:0;">Barriers to choosing Cashify</h4>', unsafe_allow_html=True)
         barriers = parse_multiselect_counts(filtered["Q21B"]) if "Q21B" in filtered.columns else pd.DataFrame()
         plot_bar(barriers.sort_values("pct", ascending=True), x="pct", y="item", orientation="h", height=380)
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
     with b2:
         st.markdown('<div class="card"><h4 style="margin-top:0;">Category Drivers & Fears</h4>', unsafe_allow_html=True)
         driver_col = "Q24" if "Q24" in filtered.columns else ("Q22" if "Q22" in filtered.columns else None)
@@ -515,11 +611,12 @@ with tabs[5]:
         fear_df = parse_multiselect_counts(filtered["Q23"]) if "Q23" in filtered.columns else pd.DataFrame()
         st.markdown("**Biggest category fears / hesitations**")
         plot_bar(fear_df.sort_values("pct", ascending=True).tail(10), x="pct", y="item", orientation="h", height=240)
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
 with tabs[6]:
     st.markdown('<div class="section-tag">Action</div>', unsafe_allow_html=True)
     st.subheader("Decision Support Summary")
+
     c1, c2 = st.columns(2)
     with c1:
         st.markdown("""
@@ -534,6 +631,7 @@ with tabs[6]:
             </ul>
         </div>
         """, unsafe_allow_html=True)
+
     with c2:
         st.markdown("""
         <div class="card">
@@ -547,4 +645,7 @@ with tabs[6]:
         </div>
         """, unsafe_allow_html=True)
 
-st.markdown('<div class="footer-note">Built for a classroom MIS live project. With the current sample size, segment cuts should be interpreted directionally.</div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="footer-note">Built for a classroom MIS live project. With the current sample size, segment cuts should be interpreted directionally.</div>',
+    unsafe_allow_html=True
+)
