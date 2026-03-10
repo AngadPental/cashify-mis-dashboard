@@ -44,8 +44,8 @@ def load_data():
     username = "L-S-D-25"
     repo = "cashify-mis-dashboard"
     
-    buyback_url = f"https://raw.githubusercontent.com/{username}/{repo}/main/buyback.csv"
-    refurb_url = f"https://raw.githubusercontent.com/{username}/{repo}/main/refurbished.csv"
+    buyback_url = f"https://raw.githubusercontent.com/{AngadPental}/{cashify-mis-dashboard}/main/buyback.csv"
+    refurb_url = f"https://raw.githubusercontent.com/{AngadPental}/{cashify-mis-dashboard}/main/refurbished.csv"
     
     try:
         buyback_df = pd.read_csv(buyback_url)
