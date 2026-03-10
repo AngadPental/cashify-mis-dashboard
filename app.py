@@ -40,18 +40,16 @@ st.markdown("""
 # ==========================================
 @st.cache_data
 def load_data():
-    # Replace 'YOUR_USERNAME' with your actual GitHub username (L-S-D-25)
-    username = "L-S-D-25"
-    repo = "cashify-mis-dashboard"
-    
-    buyback_url = f"https://raw.githubusercontent.com/{AngadPental}/{cashify-mis-dashboard}/main/buyback.csv"
-    refurb_url = f"https://raw.githubusercontent.com/{AngadPental}/{cashify-mis-dashboard}/main/refurbished.csv"
+    # PASTE THE LINKS YOU COPIED HERE
+    buyback_url = "https://raw.githubusercontent.com/L-S-D-25/cashify-mis-dashboard/main/buyback.csv"
+    refurb_url = "https://raw.githubusercontent.com/L-S-D-25/cashify-mis-dashboard/main/refurbished.csv"
     
     try:
-        buyback_df = pd.read_csv(buyback_url)
-        refurb_df = pd.read_csv(refurb_url)
+        # We add storage_options to handle any header issues
+        buyback_df = pd.read_csv(buyback_url, on_bad_lines='skip')
+        refurb_df = pd.read_csv(refurb_url, on_bad_lines='skip')
     except Exception as e:
-        st.error(f"Error loading data: {e}")
+        st.error(f"Link Connection Error: {e}")
         return pd.DataFrame(), pd.DataFrame()
     return buyback_df, refurb_df
 
