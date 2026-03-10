@@ -36,7 +36,6 @@ st.markdown("""
     --cashify-muted: #6b7280;
     --cashify-line: #e5e7eb;
     --cashify-panel: #ffffff;
-    --cashify-bg: #f7fafc;
     --shadow: 0 10px 24px rgba(20, 33, 61, 0.06);
 }
 
@@ -51,7 +50,7 @@ html, body, [class*="css"] {
 
 .block-container {
     max-width: 1500px;
-    padding-top: 0.9rem;
+    padding-top: 0.85rem;
     padding-bottom: 2rem;
 }
 
@@ -69,7 +68,7 @@ h1, h2, h3, h4 {
     color: white;
 }
 
-.hero h1, .hero h2, .hero h3, .hero p {
+.hero h1, .hero h2, .hero h3, .hero p, .hero div {
     color: white !important;
 }
 
@@ -349,6 +348,9 @@ def platform_universe(qmap, df):
     aided = parse_multiselect_counts(df["Q12"]) if "Q12" in df.columns else pd.DataFrame(columns=["item", "count", "pct"])
     if not aided.empty:
         names.update(aided["item"].tolist())
+    tom_vals = parse_open_awareness(df["Q10"] if "Q10" in df.columns else pd.Series([], dtype=object), list(names))
+    if not tom_vals.empty:
+        names.update(tom_vals["platform"].tolist())
     return sorted(names)
 
 def awareness_bundle(df, qmap):
@@ -370,30 +372,33 @@ def awareness_bundle(df, qmap):
     aided = parse_multiselect_counts(df["Q12"]).rename(columns={"item": "platform"}) if "Q12" in df.columns else pd.DataFrame(columns=["platform", "count", "pct"])
     return tom, spont_agg, aided
 
-def ever_used_metric(df):
+def usage_platform_metric(df, journey):
+    """Closest available observable platform-usage stage."""
     if "Q19A" not in df.columns:
         return pd.DataFrame(columns=["platform", "count", "pct"])
+
     vals = df["Q19A"].fillna("").astype(str).str.strip()
     vals = vals[vals.ne("")]
     if vals.empty:
         return pd.DataFrame(columns=["platform", "count", "pct"])
+
     out = vals.value_counts().reset_index()
     out.columns = ["platform", "count"]
     out["pct"] = out["count"] / max(len(df), 1) * 100
     return out
 
-def build_brand_health(df, qmap):
+def build_brand_health(df, qmap, journey):
     frames = []
     aided = parse_multiselect_counts(df["Q12"]).rename(columns={"item": "platform"}) if "Q12" in df.columns else pd.DataFrame(columns=["platform", "count", "pct"])
     fam = familiarity_metric(df, get_platform_cols(df, qmap, "Q14"))
     consider = binary_platform_metric(df, get_platform_cols(df, qmap, "Q15"), positive_values=["Selected"])
-    ever = ever_used_metric(df)
+    used = usage_platform_metric(df, journey)
 
     mapping = [
         ("Awareness", aided[["platform", "pct"]] if not aided.empty else pd.DataFrame(columns=["platform", "pct"])),
         ("Familiarity", fam[["platform", "pct"]] if not fam.empty else pd.DataFrame(columns=["platform", "pct"])),
         ("Consideration", consider[["platform", "pct"]] if not consider.empty else pd.DataFrame(columns=["platform", "pct"])),
-        ("Ever Used", ever[["platform", "pct"]] if not ever.empty else pd.DataFrame(columns=["platform", "pct"])),
+        ("Recent / Usage Proxy", used[["platform", "pct"]] if not used.empty else pd.DataFrame(columns=["platform", "pct"])),
     ]
 
     for stage_name, stage_df in mapping:
@@ -403,6 +408,15 @@ def build_brand_health(df, qmap):
             frames.append(temp)
 
     return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=["platform", "pct", "stage"])
+
+def filter_platform_df(df, selected_platforms):
+    if df is None or df.empty:
+        return df
+    if not selected_platforms or "All" in selected_platforms:
+        return df
+    if "platform" in df.columns:
+        return df[df["platform"].isin(selected_platforms)]
+    return df
 
 def plot_bar(df, x, y, color=None, height=430, orientation="v", color_sequence=None):
     if df is None or df.empty or x not in df.columns or y not in df.columns:
@@ -517,6 +531,32 @@ def kpi(label, value, note=""):
         unsafe_allow_html=True
     )
 
+def awareness_funnel_df(tom_df, spont_df, aided_df):
+    frames = []
+    for name, source_df in [("TOM", tom_df), ("Spontaneous", spont_df), ("Aided", aided_df)]:
+        if not source_df.empty:
+            temp = source_df[["platform", "pct"]].copy()
+            temp["stage"] = name
+            frames.append(temp)
+    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=["platform", "pct", "stage"])
+
+def conversion_table(brand_health_df):
+    if brand_health_df.empty:
+        return pd.DataFrame()
+    pivot = brand_health_df.pivot_table(index="platform", columns="stage", values="pct", fill_value=0).reset_index()
+
+    stage_order = [c for c in ["Awareness", "Familiarity", "Consideration", "Recent / Usage Proxy"] if c in pivot.columns]
+    for i in range(1, len(stage_order)):
+        prev_stage = stage_order[i - 1]
+        curr_stage = stage_order[i]
+        conv_col = f"{curr_stage} / {prev_stage}"
+        pivot[conv_col] = np.where(
+            pivot[prev_stage] > 0,
+            round((pivot[curr_stage] / pivot[prev_stage]) * 100, 1),
+            np.nan
+        )
+    return pivot
+
 # =================================================
 # LOAD DATA
 # =================================================
@@ -555,8 +595,34 @@ filtered = filter_df(df, city, gender, age, income, work)
 tom, spontaneous, aided = awareness_bundle(filtered, qmap)
 consider_df = binary_platform_metric(filtered, get_platform_cols(filtered, qmap, "Q15"), positive_values=["Selected"])
 nps_df = nps_table(filtered, get_platform_cols(filtered, qmap, "Q16"))
-brand_health_df = build_brand_health(filtered, qmap)
+brand_health_df = build_brand_health(filtered, qmap, journey)
 source_df = source_matrix(filtered, qmap)
+awareness_funnel = awareness_funnel_df(tom, spontaneous, aided)
+
+platform_options = sorted(set(
+    list(tom["platform"]) + list(spontaneous["platform"]) + list(aided["platform"]) +
+    list(consider_df["platform"]) + list(nps_df["platform"]) +
+    list(brand_health_df["platform"]) + list(source_df["platform"])
+)) if any([
+    not tom.empty, not spontaneous.empty, not aided.empty,
+    not consider_df.empty, not nps_df.empty, not brand_health_df.empty, not source_df.empty
+]) else []
+
+platform_filter = st.sidebar.multiselect(
+    "Platform",
+    ["All"] + platform_options,
+    default=["All"]
+)
+
+tom = filter_platform_df(tom, platform_filter)
+spontaneous = filter_platform_df(spontaneous, platform_filter)
+aided = filter_platform_df(aided, platform_filter)
+consider_df = filter_platform_df(consider_df, platform_filter)
+nps_df = filter_platform_df(nps_df, platform_filter)
+brand_health_df = filter_platform_df(brand_health_df, platform_filter)
+awareness_funnel = filter_platform_df(awareness_funnel, platform_filter)
+if not source_df.empty and "platform" in source_df.columns and platform_filter and "All" not in platform_filter:
+    source_df = source_df[source_df["platform"].isin(platform_filter)]
 
 cashify_tom = tom.loc[tom["platform"].str.lower().eq("cashify"), "pct"].max() if not tom.empty else 0
 cashify_aw = aided.loc[aided["platform"].str.lower().eq("cashify"), "pct"].max() if not aided.empty else 0
@@ -657,6 +723,46 @@ with tabs[1]:
     st.subheader("Saliency / Brand Awareness Analysis")
     st.markdown('<div class="section-note">How visible Cashify is relative to competing platforms.</div>', unsafe_allow_html=True)
 
+    top_row_left, top_row_right = st.columns([1.2, 0.8])
+
+    with top_row_left:
+        st.markdown('<div class="panel"><h4 style="margin-top:0;">Awareness Funnel</h4>', unsafe_allow_html=True)
+        st.markdown('<div class="chart-note">Compares platforms across Top-of-Mind, Spontaneous, and Aided awareness stages.</div>', unsafe_allow_html=True)
+        if not awareness_funnel.empty:
+            fig = px.bar(
+                awareness_funnel,
+                x="stage",
+                y="pct",
+                color="platform",
+                barmode="group",
+                height=460,
+                text_auto=".1f",
+                color_discrete_sequence=["#42c7b8", "#20b8a7", "#7fded4", "#14213d", "#64b5f6", "#9ca3af"],
+            )
+            fig.update_layout(
+                margin=dict(l=10, r=10, t=5, b=10),
+                plot_bgcolor="rgba(0,0,0,0)",
+                paper_bgcolor="rgba(0,0,0,0)",
+                xaxis_title="",
+                yaxis_title="Percent of respondents",
+                legend_title_text="",
+                font=dict(size=13, color="#1f2937"),
+            )
+            fig.update_traces(marker_line_width=0, cliponaxis=False)
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.markdown('<div class="empty-note">No data available for this view.</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with top_row_right:
+        st.markdown('<div class="panel"><h4 style="margin-top:0;">Awareness Table</h4>', unsafe_allow_html=True)
+        if not awareness_funnel.empty:
+            aw_pivot = awareness_funnel.pivot_table(index="platform", columns="stage", values="pct", fill_value=0).reset_index()
+            st.dataframe(aw_pivot, use_container_width=True, hide_index=True)
+        else:
+            st.markdown('<div class="empty-note">No data available for this view.</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
     a1, a2, a3 = st.columns(3)
 
     with a1:
@@ -667,7 +773,7 @@ with tabs[1]:
             x="pct",
             y="platform",
             orientation="h",
-            height=470,
+            height=430,
             color_sequence=["#42c7b8"]
         )
         st.markdown("</div>", unsafe_allow_html=True)
@@ -680,7 +786,7 @@ with tabs[1]:
             x="pct",
             y="platform",
             orientation="h",
-            height=470,
+            height=430,
             color_sequence=["#20b8a7"]
         )
         st.markdown("</div>", unsafe_allow_html=True)
@@ -693,7 +799,7 @@ with tabs[1]:
             x="pct",
             y="platform",
             orientation="h",
-            height=470,
+            height=430,
             color_sequence=["#14213d"]
         )
         st.markdown("</div>", unsafe_allow_html=True)
@@ -703,10 +809,10 @@ with tabs[1]:
 # =================================================
 with tabs[2]:
     st.markdown('<div class="section-pill">Brand Health</div>', unsafe_allow_html=True)
-    st.subheader("Brand Health Ladder")
-    st.markdown('<div class="section-note">How each platform performs across awareness, familiarity, consideration, and ever used.</div>', unsafe_allow_html=True)
+    st.subheader("Brand Health Funnel")
+    st.markdown('<div class="section-note">Awareness, Familiarity, Consideration, and platform-usage proxy with conversion ratios.</div>', unsafe_allow_html=True)
 
-    bhl, bhr = st.columns([1.35, 0.9])
+    bhl, bhr = st.columns([1.25, 0.95])
 
     with bhl:
         st.markdown('<div class="panel"><h4 style="margin-top:0;">Brand Health by Stage</h4>', unsafe_allow_html=True)
@@ -715,10 +821,10 @@ with tabs[2]:
         st.markdown("</div>", unsafe_allow_html=True)
 
     with bhr:
-        st.markdown('<div class="panel"><h4 style="margin-top:0;">Brand Health Table</h4>', unsafe_allow_html=True)
-        if not brand_health_df.empty:
-            pivot = brand_health_df.pivot_table(index="platform", columns="stage", values="pct", fill_value=0).reset_index()
-            st.dataframe(pivot, use_container_width=True, hide_index=True)
+        st.markdown('<div class="panel"><h4 style="margin-top:0;">Stage Table with Conversions</h4>', unsafe_allow_html=True)
+        conv = conversion_table(brand_health_df)
+        if not conv.empty:
+            st.dataframe(conv, use_container_width=True, hide_index=True)
         else:
             st.markdown('<div class="empty-note">No data available for this view.</div>', unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
