@@ -179,15 +179,18 @@ def parse_open_awareness(series, platform_universe):
 def parse_multiselect_counts(series):
     bucket = {}
     base = series.notna().sum()
+
     for val in series.dropna():
         for item in split_multi(val):
             bucket[item] = bucket.get(item, 0) + 1
+
+    if not bucket:
+        return pd.DataFrame(columns=["item", "count", "pct"])
+
     out = pd.DataFrame(
         [{"item": k, "count": v, "pct": v / max(base, 1) * 100} for k, v in bucket.items()]
     )
-    if not out.empty:
-        out = out.sort_values(["count", "item"], ascending=[False, True]).reset_index(drop=True)
-    return out
+    return out.sort_values(["count", "item"], ascending=[False, True]).reset_index(drop=True)
 
 def familiarity_metric(df, platform_cols):
     rows = []
@@ -278,7 +281,7 @@ def platform_universe(qmap, df):
     for prefix in ["Q13", "Q14", "Q15", "Q16"]:
         for p in get_platform_cols(df, qmap, prefix).keys():
             names.add(p)
-    aided = parse_multiselect_counts(df["Q12"]) if "Q12" in df.columns else pd.DataFrame()
+    aided = parse_multiselect_counts(df["Q12"]) if "Q12" in df.columns else pd.DataFrame(columns=["item", "count", "pct"])
     if not aided.empty:
         names.update(aided["item"].tolist())
     return sorted(names)
@@ -290,36 +293,43 @@ def awareness_bundle(df, qmap):
         parse_open_awareness(df["Q10"] if "Q10" in df.columns else pd.Series([], dtype=object), universe),
         parse_open_awareness(df["Q11"] if "Q11" in df.columns else pd.Series([], dtype=object), universe)
     ], ignore_index=True)
+
     if spont.empty:
-        spont_agg = spont
+        spont_agg = pd.DataFrame(columns=["platform", "count", "pct"])
     else:
         spont_agg = spont.groupby("platform", as_index=False)["count"].sum()
         spont_agg["pct"] = spont_agg["count"] / max(len(df), 1) * 100
         spont_agg = spont_agg.sort_values(["count", "platform"], ascending=[False, True])
+
     aided = parse_multiselect_counts(df["Q12"]).rename(columns={"item": "platform"}) if "Q12" in df.columns else pd.DataFrame(columns=["platform", "count", "pct"])
     return tom, spont_agg, aided
 
 def build_health_funnel(df, qmap):
+    frames = []
+
     aided = parse_multiselect_counts(df["Q12"]).rename(columns={"item": "platform"}) if "Q12" in df.columns else pd.DataFrame(columns=["platform", "count", "pct"])
     fam = familiarity_metric(df, get_platform_cols(df, qmap, "Q14"))
     consider = binary_platform_metric(df, get_platform_cols(df, qmap, "Q15"), positive_values=["Selected"])
     recent = binary_platform_metric(df, get_platform_cols(df, qmap, "Q16"), any_non_blank=True)
-    frames = []
+
     for stage_name, stage_df in [
-        ("Awareness", aided[["platform", "pct"]]),
-        ("Familiarity", fam[["platform", "pct"]]),
-        ("Intent / Recent", consider[["platform", "pct"]]),
-        ("NPS Base", recent[["platform", "pct"]]),
+        ("Awareness", aided[["platform", "pct"]] if not aided.empty else pd.DataFrame(columns=["platform", "pct"])),
+        ("Familiarity", fam[["platform", "pct"]] if not fam.empty else pd.DataFrame(columns=["platform", "pct"])),
+        ("Intent / Recent", consider[["platform", "pct"]] if not consider.empty else pd.DataFrame(columns=["platform", "pct"])),
+        ("NPS Base", recent[["platform", "pct"]] if not recent.empty else pd.DataFrame(columns=["platform", "pct"])),
     ]:
-        tmp = stage_df.copy()
-        tmp["stage"] = stage_name
-        frames.append(tmp)
+        if not stage_df.empty:
+            tmp = stage_df.copy()
+            tmp["stage"] = stage_name
+            frames.append(tmp)
+
     return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=["platform", "pct", "stage"])
 
 def plot_bar(df, x, y, color=None, height=360, orientation="v"):
-    if df is None or df.empty:
+    if df is None or df.empty or x not in df.columns or y not in df.columns:
         st.info("Not enough data to show this view for the current selection.")
         return
+
     fig = px.bar(df, x=x, y=y, color=color, orientation=orientation, height=height, text_auto=".1f")
     fig.update_layout(
         margin=dict(l=10, r=10, t=10, b=10),
@@ -332,10 +342,20 @@ def plot_bar(df, x, y, color=None, height=360, orientation="v"):
     st.plotly_chart(fig, use_container_width=True)
 
 def plot_heatmap(matrix_df, index_col, col_col, value_col, height=420):
-    if matrix_df.empty:
+    if (
+        matrix_df.empty
+        or index_col not in matrix_df.columns
+        or col_col not in matrix_df.columns
+        or value_col not in matrix_df.columns
+    ):
         st.info("Not enough data to show this view for the current selection.")
         return
+
     pivot = matrix_df.pivot_table(index=index_col, columns=col_col, values=value_col, fill_value=0, aggfunc="sum")
+    if pivot.empty:
+        st.info("Not enough data to show this view for the current selection.")
+        return
+
     fig = px.imshow(pivot, aspect="auto", text_auto=".0f", color_continuous_scale="Tealgrn", height=height)
     fig.update_layout(
         margin=dict(l=10, r=10, t=10, b=10),
@@ -356,7 +376,6 @@ def kpi(label, value, note=""):
 # -------------------------------------------------
 st.sidebar.title("Dashboard Controls")
 
-# keep uploader as a fallback even after GitHub deploy
 use_upload = st.sidebar.toggle("Use uploaded Excel files instead", value=False)
 
 if use_upload:
@@ -370,9 +389,7 @@ if use_upload:
         st.stop()
 else:
     if not BUYBACK_DEFAULT.exists() or not REFURB_DEFAULT.exists():
-        st.error(
-            "Excel files not found in the repo. Make sure both files are inside the 'data' folder in GitHub."
-        )
+        st.error("Excel files not found in the repo. Make sure both files are inside the 'data' folder in GitHub.")
         st.code(
             "data/\n"
             "├── Live Brand Study - CASHIFY Buyback - Final data.xlsx\n"
@@ -453,6 +470,7 @@ tabs = st.tabs([
 with tabs[0]:
     st.markdown('<div class="section-tag">Context</div>', unsafe_allow_html=True)
     st.subheader("Study Overview & Sample Snapshot")
+
     left, right = st.columns([1.2, 1])
 
     with left:
@@ -477,7 +495,7 @@ with tabs[0]:
             vc.columns = ["Option", "Count"]
             vc["Question"] = col
             frames.append(vc.head(5))
-        demo_df = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+        demo_df = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=["Option", "Count", "Question"])
         plot_bar(demo_df, x="Option", y="Count", color="Question", height=420)
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -509,6 +527,7 @@ with tabs[2]:
     if not funnel_df.empty:
         top_platforms = funnel_df.groupby("platform")["pct"].max().sort_values(ascending=False).head(6).index.tolist()
         chart_df = funnel_df[funnel_df["platform"].isin(top_platforms)]
+
         fig = px.line(chart_df, x="stage", y="pct", color="platform", markers=True, height=420)
         fig.update_layout(
             margin=dict(l=10, r=10, t=10, b=10),
@@ -519,6 +538,7 @@ with tabs[2]:
             legend_title_text=""
         )
         st.plotly_chart(fig, use_container_width=True)
+
         st.dataframe(
             funnel_df.pivot_table(index="platform", columns="stage", values="pct", fill_value=0).reset_index(),
             use_container_width=True,
@@ -532,6 +552,7 @@ with tabs[3]:
     st.subheader("Consideration & NPS")
 
     l1, l2 = st.columns(2)
+
     with l1:
         st.markdown('<div class="card"><h4 style="margin-top:0;">Consideration Set</h4>', unsafe_allow_html=True)
         plot_bar(consider_df.sort_values("pct", ascending=True), x="pct", y="platform", orientation="h", height=420)
@@ -558,6 +579,7 @@ with tabs[4]:
     source_df = source_matrix(filtered, qmap)
 
     s1, s2 = st.columns([1.25, 0.75])
+
     with s1:
         st.markdown('<div class="card"><h4 style="margin-top:0;">Platform × Source Heatmap</h4>', unsafe_allow_html=True)
         plot_heatmap(source_df, "platform", "source", "count", height=470)
@@ -565,7 +587,10 @@ with tabs[4]:
 
     with s2:
         st.markdown('<div class="card"><h4 style="margin-top:0;">Top Awareness Sources</h4>', unsafe_allow_html=True)
-        top_sources = source_df.groupby("source", as_index=False)["count"].sum().sort_values("count", ascending=True) if not source_df.empty else pd.DataFrame()
+        top_sources = (
+            source_df.groupby("source", as_index=False)["count"].sum().sort_values("count", ascending=True)
+            if not source_df.empty else pd.DataFrame(columns=["source", "count"])
+        )
         plot_bar(top_sources.tail(10), x="count", y="source", orientation="h", height=470)
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -574,13 +599,20 @@ with tabs[5]:
     st.subheader("Choice Drivers, Barriers & Category Fears")
 
     d1, d2 = st.columns(2)
+
     with d1:
         st.markdown('<div class="card"><h4 style="margin-top:0;">Why Cashify was chosen</h4>', unsafe_allow_html=True)
         chosen_cashify = ranking_weighted_scores(filtered, qmap, "Q20")
         if chosen_cashify.empty:
             st.info("No rank-based Cashify choice data available in the current view.")
         else:
-            plot_bar(chosen_cashify.sort_values("weighted_score", ascending=True), x="weighted_score", y="factor", orientation="h", height=420)
+            plot_bar(
+                chosen_cashify.sort_values("weighted_score", ascending=True),
+                x="weighted_score",
+                y="factor",
+                orientation="h",
+                height=420
+            )
             st.dataframe(chosen_cashify, use_container_width=True, hide_index=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -590,27 +622,68 @@ with tabs[5]:
         if chosen_other.empty:
             st.info("No competitor rank-based data available in the current view.")
         else:
-            plot_bar(chosen_other.sort_values("weighted_score", ascending=True), x="weighted_score", y="factor", orientation="h", height=420)
+            plot_bar(
+                chosen_other.sort_values("weighted_score", ascending=True),
+                x="weighted_score",
+                y="factor",
+                orientation="h",
+                height=420
+            )
             st.dataframe(chosen_other, use_container_width=True, hide_index=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
     b1, b2 = st.columns(2)
+
     with b1:
         st.markdown('<div class="card"><h4 style="margin-top:0;">Barriers to choosing Cashify</h4>', unsafe_allow_html=True)
-        barriers = parse_multiselect_counts(filtered["Q21B"]) if "Q21B" in filtered.columns else pd.DataFrame()
-        plot_bar(barriers.sort_values("pct", ascending=True), x="pct", y="item", orientation="h", height=380)
+        barriers = parse_multiselect_counts(filtered["Q21B"]) if "Q21B" in filtered.columns else pd.DataFrame(columns=["item", "count", "pct"])
+
+        if barriers.empty or "pct" not in barriers.columns or "item" not in barriers.columns:
+            st.info("No barrier data available for the current selection.")
+        else:
+            plot_bar(
+                barriers.sort_values("pct", ascending=True),
+                x="pct",
+                y="item",
+                orientation="h",
+                height=380
+            )
         st.markdown("</div>", unsafe_allow_html=True)
 
     with b2:
         st.markdown('<div class="card"><h4 style="margin-top:0;">Category Drivers & Fears</h4>', unsafe_allow_html=True)
+
         driver_col = "Q24" if "Q24" in filtered.columns else ("Q22" if "Q22" in filtered.columns else None)
+
+        st.markdown("**Top category drivers**")
         if driver_col:
             driver_df = parse_multiselect_counts(filtered[driver_col])
-            st.markdown("**Top category drivers**")
-            plot_bar(driver_df.sort_values("pct", ascending=True).tail(10), x="pct", y="item", orientation="h", height=240)
-        fear_df = parse_multiselect_counts(filtered["Q23"]) if "Q23" in filtered.columns else pd.DataFrame()
+            if driver_df.empty or "pct" not in driver_df.columns or "item" not in driver_df.columns:
+                st.info("No category driver data available for the current selection.")
+            else:
+                plot_bar(
+                    driver_df.sort_values("pct", ascending=True).tail(10),
+                    x="pct",
+                    y="item",
+                    orientation="h",
+                    height=240
+                )
+        else:
+            st.info("No category driver variable found in this dataset.")
+
         st.markdown("**Biggest category fears / hesitations**")
-        plot_bar(fear_df.sort_values("pct", ascending=True).tail(10), x="pct", y="item", orientation="h", height=240)
+        fear_df = parse_multiselect_counts(filtered["Q23"]) if "Q23" in filtered.columns else pd.DataFrame(columns=["item", "count", "pct"])
+        if fear_df.empty or "pct" not in fear_df.columns or "item" not in fear_df.columns:
+            st.info("No fear / hesitation data available for the current selection.")
+        else:
+            plot_bar(
+                fear_df.sort_values("pct", ascending=True).tail(10),
+                x="pct",
+                y="item",
+                orientation="h",
+                height=240
+            )
+
         st.markdown("</div>", unsafe_allow_html=True)
 
 with tabs[6]:
@@ -618,6 +691,7 @@ with tabs[6]:
     st.subheader("Decision Support Summary")
 
     c1, c2 = st.columns(2)
+
     with c1:
         st.markdown("""
         <div class="card">
