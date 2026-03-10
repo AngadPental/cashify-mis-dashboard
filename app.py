@@ -23,58 +23,65 @@ BUYBACK_DEFAULT = DATA_DIR / "Live Brand Study - CASHIFY Buyback - Final data.xl
 REFURB_DEFAULT = DATA_DIR / "Live Brand Study - CASHIFY - Refurbished_data.xlsx"
 
 # =================================================
-# STYLING
+# CASHIFY STYLING
 # =================================================
 st.markdown("""
 <style>
 :root {
-    --bg: #f4f7fb;
-    --panel: #ffffff;
-    --hero: #edf5f7;
-    --text: #152238;
-    --muted: #6c7a90;
-    --line: #e6edf5;
-    --teal: #21b6a8;
-    --blue: #4e7cff;
-    --navy: #14213d;
-    --red: #ff6b6b;
-    --amber: #f4bf4f;
-    --shadow: 0 10px 24px rgba(20, 34, 56, 0.06);
+    --cashify-teal: #42c7b8;
+    --cashify-teal-dark: #20b8a7;
+    --cashify-teal-soft: #ecfbf8;
+    --cashify-navy: #14213d;
+    --cashify-text: #1f2937;
+    --cashify-muted: #6b7280;
+    --cashify-line: #e5e7eb;
+    --cashify-panel: #ffffff;
+    --cashify-bg: #f7fafc;
+    --shadow: 0 10px 24px rgba(20, 33, 61, 0.06);
 }
 
 html, body, [class*="css"] {
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    color: var(--text);
+    color: var(--cashify-text);
 }
 
 .main {
-    background: linear-gradient(180deg, #f8fbfd 0%, #f4f7fb 100%);
+    background: linear-gradient(180deg, #fbfdfe 0%, #f6fafb 100%);
 }
 
 .block-container {
     max-width: 1500px;
-    padding-top: 1rem;
+    padding-top: 0.9rem;
     padding-bottom: 2rem;
 }
 
 h1, h2, h3, h4 {
-    color: var(--text);
+    color: var(--cashify-navy);
     letter-spacing: -0.02em;
 }
 
 .hero {
-    background: linear-gradient(135deg, rgba(33,182,168,0.08), rgba(78,124,255,0.06));
-    border: 1px solid var(--line);
+    background: linear-gradient(135deg, var(--cashify-teal) 0%, #5ad2c5 100%);
     border-radius: 28px;
-    padding: 1.3rem 1.5rem;
+    padding: 1.45rem 1.55rem;
     box-shadow: var(--shadow);
-    margin-bottom: 0.9rem;
-    overflow: hidden;
+    margin-bottom: 1rem;
+    color: white;
+}
+
+.hero h1, .hero h2, .hero h3, .hero p {
+    color: white !important;
+}
+
+.hero-sub {
+    font-size: 0.95rem;
+    opacity: 0.95;
+    line-height: 1.5;
 }
 
 .panel {
-    background: var(--panel);
-    border: 1px solid var(--line);
+    background: var(--cashify-panel);
+    border: 1px solid var(--cashify-line);
     border-radius: 22px;
     padding: 1rem 1rem 0.8rem 1rem;
     box-shadow: var(--shadow);
@@ -82,8 +89,8 @@ h1, h2, h3, h4 {
 }
 
 .kpi-card {
-    background: var(--panel);
-    border: 1px solid var(--line);
+    background: white;
+    border: 1px solid var(--cashify-line);
     border-radius: 20px;
     padding: 0.9rem 1rem 0.85rem 1rem;
     box-shadow: var(--shadow);
@@ -92,18 +99,18 @@ h1, h2, h3, h4 {
 
 .kpi-label {
     font-size: 0.78rem;
-    color: var(--muted);
+    color: var(--cashify-muted);
     margin-bottom: 0.18rem;
 }
 .kpi-value {
     font-size: 1.9rem;
     font-weight: 800;
-    color: var(--text);
+    color: var(--cashify-navy);
     line-height: 1.05;
 }
 .kpi-note {
     font-size: 0.75rem;
-    color: var(--muted);
+    color: var(--cashify-muted);
     margin-top: 0.15rem;
 }
 
@@ -111,59 +118,45 @@ h1, h2, h3, h4 {
     display: inline-block;
     font-size: 0.70rem;
     color: #0f766e;
-    background: rgba(33,182,168,0.10);
-    border: 1px solid rgba(33,182,168,0.14);
+    background: var(--cashify-teal-soft);
+    border: 1px solid #d7f4ee;
     padding: 0.2rem 0.52rem;
     border-radius: 999px;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.35rem;
 }
 
 .section-note {
     font-size: 0.88rem;
-    color: var(--muted);
+    color: var(--cashify-muted);
     margin-top: -0.1rem;
     margin-bottom: 0.8rem;
-    line-height: 1.4;
-}
-
-.chart-note {
-    font-size: 0.82rem;
-    color: var(--muted);
-    margin-top: -0.2rem;
-    margin-bottom: 0.65rem;
     line-height: 1.45;
 }
 
-.small-muted {
-    color: var(--muted);
-    font-size: 0.8rem;
+.chart-note {
+    font-size: 0.81rem;
+    color: var(--cashify-muted);
+    margin-top: -0.1rem;
+    margin-bottom: 0.55rem;
     line-height: 1.4;
 }
 
-.info-box {
-    background: #f8fbff;
-    border: 1px dashed #d7e4f3;
-    border-radius: 16px;
-    padding: 0.8rem 0.9rem;
-    color: var(--text);
-}
-
-.data-box {
-    background: #fbfcfe;
-    border: 1px solid var(--line);
-    border-radius: 18px;
-    padding: 0.9rem;
+.empty-note {
+    font-size: 0.85rem;
+    color: var(--cashify-muted);
+    font-style: italic;
+    padding: 0.4rem 0 0.2rem 0;
 }
 
 [data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #f8fbfd 0%, #f3f7fb 100%);
-    border-right: 1px solid var(--line);
+    background: linear-gradient(180deg, #f7fbfc 0%, #f4f8fb 100%);
+    border-right: 1px solid var(--cashify-line);
 }
 
 [data-testid="stSidebar"] h1,
 [data-testid="stSidebar"] h2,
 [data-testid="stSidebar"] h3 {
-    color: var(--text);
+    color: var(--cashify-navy);
 }
 
 .stTabs [data-baseweb="tab-list"] {
@@ -177,7 +170,7 @@ h1, h2, h3, h4 {
 }
 
 .footer-note {
-    color: var(--muted);
+    color: var(--cashify-muted);
     font-size: 0.76rem;
     margin-top: 1rem;
 }
@@ -391,7 +384,6 @@ def ever_used_metric(df):
 
 def build_brand_health(df, qmap):
     frames = []
-
     aided = parse_multiselect_counts(df["Q12"]).rename(columns={"item": "platform"}) if "Q12" in df.columns else pd.DataFrame(columns=["platform", "count", "pct"])
     fam = familiarity_metric(df, get_platform_cols(df, qmap, "Q14"))
     consider = binary_platform_metric(df, get_platform_cols(df, qmap, "Q15"), positive_values=["Selected"])
@@ -412,9 +404,9 @@ def build_brand_health(df, qmap):
 
     return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=["platform", "pct", "stage"])
 
-def plot_bar(df, x, y, color=None, height=440, orientation="v", color_sequence=None):
+def plot_bar(df, x, y, color=None, height=430, orientation="v", color_sequence=None):
     if df is None or df.empty or x not in df.columns or y not in df.columns:
-        st.info("No data available for this view.")
+        st.markdown('<div class="empty-note">No data available for this view.</div>', unsafe_allow_html=True)
         return
 
     fig = px.bar(
@@ -428,13 +420,13 @@ def plot_bar(df, x, y, color=None, height=440, orientation="v", color_sequence=N
         color_discrete_sequence=color_sequence,
     )
     fig.update_layout(
-        margin=dict(l=10, r=10, t=10, b=10),
+        margin=dict(l=10, r=10, t=5, b=10),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         legend_title_text="",
         xaxis_title="",
         yaxis_title="",
-        font=dict(size=13),
+        font=dict(size=13, color="#1f2937"),
     )
     fig.update_traces(marker_line_width=0, textposition="outside", cliponaxis=False)
     st.plotly_chart(fig, use_container_width=True)
@@ -446,12 +438,12 @@ def plot_heatmap(matrix_df, index_col, col_col, value_col, height=520):
         or col_col not in matrix_df.columns
         or value_col not in matrix_df.columns
     ):
-        st.info("No data available for this view.")
+        st.markdown('<div class="empty-note">No data available for this view.</div>', unsafe_allow_html=True)
         return
 
     pivot = matrix_df.pivot_table(index=index_col, columns=col_col, values=value_col, fill_value=0, aggfunc="sum")
     if pivot.empty:
-        st.info("No data available for this view.")
+        st.markdown('<div class="empty-note">No data available for this view.</div>', unsafe_allow_html=True)
         return
 
     fig = px.imshow(
@@ -459,26 +451,26 @@ def plot_heatmap(matrix_df, index_col, col_col, value_col, height=520):
         aspect="auto",
         text_auto=".0f",
         color_continuous_scale=[
-            [0.0, "#eef8f6"],
-            [0.25, "#d7f0ea"],
-            [0.5, "#a4e1d6"],
-            [0.75, "#57c8b5"],
-            [1.0, "#21b6a8"],
+            [0.0, "#edfdf9"],
+            [0.25, "#d8f7f1"],
+            [0.5, "#acece2"],
+            [0.75, "#70d9cb"],
+            [1.0, "#42c7b8"],
         ],
         height=height,
     )
     fig.update_layout(
-        margin=dict(l=10, r=10, t=10, b=10),
+        margin=dict(l=10, r=10, t=5, b=10),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         coloraxis_colorbar_title="Count",
-        font=dict(size=12),
+        font=dict(size=12, color="#1f2937"),
     )
     st.plotly_chart(fig, use_container_width=True)
 
 def plot_brand_health(df):
     if df.empty:
-        st.info("No data available for this view.")
+        st.markdown('<div class="empty-note">No data available for this view.</div>', unsafe_allow_html=True)
         return
 
     top_platforms = (
@@ -499,16 +491,16 @@ def plot_brand_health(df):
         barmode="group",
         height=500,
         text_auto=".1f",
-        color_discrete_sequence=["#21b6a8", "#4e7cff", "#8bc0ff", "#ff7d7d", "#8b5cf6", "#14213d"],
+        color_discrete_sequence=["#42c7b8", "#20b8a7", "#7fded4", "#14213d", "#64b5f6", "#9ca3af"],
     )
     fig.update_layout(
-        margin=dict(l=10, r=10, t=10, b=10),
+        margin=dict(l=10, r=10, t=5, b=10),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         xaxis_title="",
         yaxis_title="Percent of respondents",
         legend_title_text="",
-        font=dict(size=13),
+        font=dict(size=13, color="#1f2937"),
     )
     fig.update_traces(marker_line_width=0, cliponaxis=False)
     st.plotly_chart(fig, use_container_width=True)
@@ -546,14 +538,14 @@ df = buy_df.copy() if journey == "Buyback" else ref_df.copy()
 qmap = buy_map if journey == "Buyback" else ref_map
 
 def mfilter(label, col):
-    vals = sorted([v for v in df[col].dropna().astype(str).unique().tolist() if v.strip()]) if col in df.columns else []
+    vals = sorted([v for v in df[col].dropna().astype(str).unique().tolist() if v.strip()])
     return st.sidebar.multiselect(label, ["All"] + vals, default=["All"])
 
-city = mfilter("City / Tier", "Q1")
-gender = mfilter("Gender", "Q2")
-age = mfilter("Age Bucket", "Q3")
-income = mfilter("Household Income", "Q8")
-work = mfilter("Working Status", "Q7")
+city = mfilter("City / Tier", "Q1") if "Q1" in df.columns else ["All"]
+gender = mfilter("Gender", "Q2") if "Q2" in df.columns else ["All"]
+age = mfilter("Age Bucket", "Q3") if "Q3" in df.columns else ["All"]
+income = mfilter("Household Income", "Q8") if "Q8" in df.columns else ["All"]
+work = mfilter("Working Status", "Q7") if "Q7" in df.columns else ["All"]
 
 filtered = filter_df(df, city, gender, age, income, work)
 
@@ -578,13 +570,12 @@ st.markdown(f"""
 <div class="hero">
     <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
         <div style="flex:1;">
-            <div class="section-pill">MIS + DSS</div>
-            <h1 style="margin:0 0 0.35rem 0;">Cashify Consumer Intelligence Dashboard</h1>
-            <div class="section-note">
+            <h1 style="margin:0 0 0.4rem 0;">Cashify Consumer Intelligence Dashboard</h1>
+            <div class="hero-sub">
                 Consumer view for the <b>{journey}</b> journey across awareness, brand strength, consideration, recommendation, source of awareness, and choice drivers.
             </div>
         </div>
-        <div style="min-width:230px; max-width:240px;">
+        <div style="min-width:220px; max-width:230px;">
             <div class="kpi-card">
                 <div class="kpi-label">Filtered Sample</div>
                 <div class="kpi-value">{len(filtered)}</div>
@@ -621,26 +612,22 @@ tabs = st.tabs([
 with tabs[0]:
     st.markdown('<div class="section-pill">Overview</div>', unsafe_allow_html=True)
     st.subheader("Study Overview & Sample Snapshot")
-    st.markdown('<div class="section-note">Profile of the filtered respondents. Useful for the methodology and sample section of the presentation.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-note">Profile of the filtered respondents.</div>', unsafe_allow_html=True)
 
     left, right = st.columns([1.0, 1.15])
 
     with left:
+        st.markdown('<div class="panel"><h4 style="margin-top:0;">How to read this dashboard</h4>', unsafe_allow_html=True)
         st.markdown("""
-        <div class="panel">
-            <h4 style="margin-top:0;">How to read this dashboard</h4>
-            <div class="small-muted">
-                Each section answers a different management question:
-                <ul>
-                    <li><b>Awareness:</b> Which brands people know and mention first</li>
-                    <li><b>Brand Health:</b> How strong each brand is across key stages</li>
-                    <li><b>Consideration & NPS:</b> Which brands make the shortlist and get recommended</li>
-                    <li><b>Sources:</b> Where awareness is coming from</li>
-                    <li><b>Drivers & Barriers:</b> Why people choose or avoid a platform</li>
-                </ul>
-            </div>
+        <div class="chart-note">
+            <b>Awareness</b> shows which brands people know.<br>
+            <b>Brand Health</b> shows platform strength across key stages.<br>
+            <b>Consideration & NPS</b> shows shortlist inclusion and recommendation strength.<br>
+            <b>Sources</b> shows where awareness is coming from.<br>
+            <b>Drivers & Barriers</b> shows why people choose or avoid a platform.
         </div>
         """, unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     with right:
         st.markdown('<div class="panel"><h4 style="margin-top:0;">Respondent Profile</h4>', unsafe_allow_html=True)
@@ -658,7 +645,7 @@ with tabs[0]:
             y="Count",
             color="Question",
             height=450,
-            color_sequence=["#4e7cff", "#8bc0ff", "#ff6b6b", "#ffc0c0", "#21b6a8"]
+            color_sequence=["#42c7b8", "#20b8a7", "#7fded4", "#14213d", "#9ca3af"]
         )
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -668,39 +655,39 @@ with tabs[0]:
 with tabs[1]:
     st.markdown('<div class="section-pill">Awareness</div>', unsafe_allow_html=True)
     st.subheader("Saliency / Brand Awareness Analysis")
-    st.markdown('<div class="section-note">Shows how visible Cashify is relative to competing platforms.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-note">How visible Cashify is relative to competing platforms.</div>', unsafe_allow_html=True)
 
     a1, a2, a3 = st.columns(3)
 
     with a1:
         st.markdown('<div class="panel"><h4 style="margin-top:0;">Top-of-Mind Recall</h4>', unsafe_allow_html=True)
-        st.markdown('<div class="chart-note">Shows which brand people mention first without seeing a list.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="chart-note">Which brand respondents mention first without seeing a list.</div>', unsafe_allow_html=True)
         plot_bar(
             tom.sort_values("pct", ascending=True).tail(10),
             x="pct",
             y="platform",
             orientation="h",
             height=470,
-            color_sequence=["#21b6a8"]
+            color_sequence=["#42c7b8"]
         )
         st.markdown("</div>", unsafe_allow_html=True)
 
     with a2:
         st.markdown('<div class="panel"><h4 style="margin-top:0;">Spontaneous Awareness</h4>', unsafe_allow_html=True)
-        st.markdown('<div class="chart-note">Shows all brands people recall on their own, without prompting.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="chart-note">All brands respondents recall on their own, without prompting.</div>', unsafe_allow_html=True)
         plot_bar(
             spontaneous.sort_values("pct", ascending=True).tail(10),
             x="pct",
             y="platform",
             orientation="h",
             height=470,
-            color_sequence=["#4e7cff"]
+            color_sequence=["#20b8a7"]
         )
         st.markdown("</div>", unsafe_allow_html=True)
 
     with a3:
         st.markdown('<div class="panel"><h4 style="margin-top:0;">Aided Awareness</h4>', unsafe_allow_html=True)
-        st.markdown('<div class="chart-note">Shows which brands people recognise after seeing a prompted list.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="chart-note">Brands respondents recognise after seeing a prompted list.</div>', unsafe_allow_html=True)
         plot_bar(
             aided.sort_values("pct", ascending=True).tail(10),
             x="pct",
@@ -717,24 +704,23 @@ with tabs[1]:
 with tabs[2]:
     st.markdown('<div class="section-pill">Brand Health</div>', unsafe_allow_html=True)
     st.subheader("Brand Health Ladder")
-    st.markdown('<div class="section-note">Shows how each platform performs across awareness, familiarity, consideration, and ever used.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-note">How each platform performs across awareness, familiarity, consideration, and ever used.</div>', unsafe_allow_html=True)
 
     bhl, bhr = st.columns([1.35, 0.9])
 
     with bhl:
         st.markdown('<div class="panel"><h4 style="margin-top:0;">Brand Health by Stage</h4>', unsafe_allow_html=True)
-        st.markdown('<div class="chart-note">Use this to compare how strong each platform is at different stages of consumer progression.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="chart-note">Compare how strong each platform is across the key stages.</div>', unsafe_allow_html=True)
         plot_brand_health(brand_health_df)
         st.markdown("</div>", unsafe_allow_html=True)
 
     with bhr:
         st.markdown('<div class="panel"><h4 style="margin-top:0;">Brand Health Table</h4>', unsafe_allow_html=True)
-        st.markdown('<div class="chart-note">Underlying numbers behind the stage comparison chart.</div>', unsafe_allow_html=True)
         if not brand_health_df.empty:
             pivot = brand_health_df.pivot_table(index="platform", columns="stage", values="pct", fill_value=0).reset_index()
             st.dataframe(pivot, use_container_width=True, hide_index=True)
         else:
-            st.info("No data available for this view.")
+            st.markdown('<div class="empty-note">No data available for this view.</div>', unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
 # =================================================
@@ -743,38 +729,38 @@ with tabs[2]:
 with tabs[3]:
     st.markdown('<div class="section-pill">Consideration & NPS</div>', unsafe_allow_html=True)
     st.subheader("Consideration & Recommendation")
-    st.markdown('<div class="section-note">Shows which platforms make the shortlist and how strongly users recommend them.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-note">Shortlist inclusion and recommendation strength.</div>', unsafe_allow_html=True)
 
     c1, c2 = st.columns(2)
 
     with c1:
         st.markdown('<div class="panel"><h4 style="margin-top:0;">Consideration Set</h4>', unsafe_allow_html=True)
-        st.markdown('<div class="chart-note">Shows which platforms consumers would consider the next time they buy or sell.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="chart-note">Platforms respondents would consider the next time they buy or sell.</div>', unsafe_allow_html=True)
         plot_bar(
             consider_df.sort_values("pct", ascending=True),
             x="pct",
             y="platform",
             orientation="h",
             height=470,
-            color_sequence=["#21b6a8"]
+            color_sequence=["#42c7b8"]
         )
         st.markdown("</div>", unsafe_allow_html=True)
 
     with c2:
         st.markdown('<div class="panel"><h4 style="margin-top:0;">NPS by Platform</h4>', unsafe_allow_html=True)
-        st.markdown('<div class="chart-note">Shows recommendation strength using Promoters minus Detractors.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="chart-note">Recommendation strength measured as Promoters minus Detractors.</div>', unsafe_allow_html=True)
         plot_bar(
             nps_df.sort_values("nps", ascending=True),
             x="nps",
             y="platform",
             orientation="h",
             height=470,
-            color_sequence=["#4e7cff"]
+            color_sequence=["#14213d"]
         )
         st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown('<div class="panel" style="margin-top:0.9rem;"><h4 style="margin-top:0;">Promoter / Passive / Detractor Split</h4>', unsafe_allow_html=True)
-    st.markdown('<div class="chart-note">Breaks each platform’s recommendation score into promoters, passives, and detractors.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="chart-note">Breakdown of each platform’s recommendation profile.</div>', unsafe_allow_html=True)
     if not nps_df.empty:
         melt = nps_df.melt(
             id_vars=["platform", "base", "nps"],
@@ -788,10 +774,10 @@ with tabs[3]:
             y="count",
             color="segment",
             height=420,
-            color_sequence=["#21b6a8", "#f4bf4f", "#ff6b6b"]
+            color_sequence=["#42c7b8", "#9ca3af", "#14213d"]
         )
     else:
-        st.info("No data available for this view.")
+        st.markdown('<div class="empty-note">No data available for this view.</div>', unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
 # =================================================
@@ -800,19 +786,19 @@ with tabs[3]:
 with tabs[4]:
     st.markdown('<div class="section-pill">Sources</div>', unsafe_allow_html=True)
     st.subheader("Source of Awareness")
-    st.markdown('<div class="section-note">Shows how awareness is being built across channels.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-note">Where awareness is being built across channels.</div>', unsafe_allow_html=True)
 
     s1, s2 = st.columns([1.3, 0.8])
 
     with s1:
         st.markdown('<div class="panel"><h4 style="margin-top:0;">Platform × Source Heatmap</h4>', unsafe_allow_html=True)
-        st.markdown('<div class="chart-note">Shows which channels are associated with awareness for each platform.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="chart-note">Channels associated with awareness for each platform.</div>', unsafe_allow_html=True)
         plot_heatmap(source_df, "platform", "source", "count", height=540)
         st.markdown("</div>", unsafe_allow_html=True)
 
     with s2:
         st.markdown('<div class="panel"><h4 style="margin-top:0;">Top Awareness Sources</h4>', unsafe_allow_html=True)
-        st.markdown('<div class="chart-note">Shows the strongest awareness-building channels overall.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="chart-note">Strongest awareness-building channels overall.</div>', unsafe_allow_html=True)
         top_sources = (
             source_df.groupby("source", as_index=False)["count"].sum().sort_values("count", ascending=True)
             if not source_df.empty else pd.DataFrame(columns=["source", "count"])
@@ -823,7 +809,7 @@ with tabs[4]:
             y="source",
             orientation="h",
             height=540,
-            color_sequence=["#21b6a8"]
+            color_sequence=["#20b8a7"]
         )
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -833,16 +819,16 @@ with tabs[4]:
 with tabs[5]:
     st.markdown('<div class="section-pill">Drivers & Barriers</div>', unsafe_allow_html=True)
     st.subheader("Choice Drivers, Barriers & Category Fears")
-    st.markdown('<div class="section-note">Shows why people choose a platform, what stops them from choosing Cashify, and what category fears matter most.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-note">Why people choose a platform, what blocks Cashify, and what category fears matter most.</div>', unsafe_allow_html=True)
 
     d1, d2 = st.columns(2)
 
     with d1:
         st.markdown('<div class="panel"><h4 style="margin-top:0;">Why Cashify was chosen</h4>', unsafe_allow_html=True)
-        st.markdown('<div class="chart-note">Shows the ranked reasons respondents chose Cashify, where data is available.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="chart-note">Ranked reasons respondents chose Cashify, where available.</div>', unsafe_allow_html=True)
         chosen_cashify = ranking_weighted_scores(filtered, qmap, "Q20")
         if chosen_cashify.empty:
-            st.info("No ranked Cashify choice data available for this view.")
+            st.markdown('<div class="empty-note">No ranked Cashify choice data available for this view.</div>', unsafe_allow_html=True)
         else:
             plot_bar(
                 chosen_cashify.sort_values("weighted_score", ascending=True),
@@ -850,17 +836,17 @@ with tabs[5]:
                 y="factor",
                 orientation="h",
                 height=450,
-                color_sequence=["#21b6a8"]
+                color_sequence=["#42c7b8"]
             )
             st.dataframe(chosen_cashify, use_container_width=True, hide_index=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
     with d2:
         st.markdown('<div class="panel"><h4 style="margin-top:0;">Why another platform was chosen</h4>', unsafe_allow_html=True)
-        st.markdown('<div class="chart-note">Shows the ranked reasons respondents chose a competing platform instead.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="chart-note">Ranked reasons respondents chose a competing platform instead.</div>', unsafe_allow_html=True)
         chosen_other = ranking_weighted_scores(filtered, qmap, "Q21A")
         if chosen_other.empty:
-            st.info("No competitor choice data available for this view.")
+            st.markdown('<div class="empty-note">No competitor choice data available for this view.</div>', unsafe_allow_html=True)
         else:
             plot_bar(
                 chosen_other.sort_values("weighted_score", ascending=True),
@@ -868,7 +854,7 @@ with tabs[5]:
                 y="factor",
                 orientation="h",
                 height=450,
-                color_sequence=["#4e7cff"]
+                color_sequence=["#14213d"]
             )
             st.dataframe(chosen_other, use_container_width=True, hide_index=True)
         st.markdown("</div>", unsafe_allow_html=True)
@@ -877,10 +863,15 @@ with tabs[5]:
 
     with b1:
         st.markdown('<div class="panel"><h4 style="margin-top:0;">Barriers to choosing Cashify</h4>', unsafe_allow_html=True)
-        st.markdown('<div class="chart-note">Shows what stopped respondents from choosing Cashify.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="chart-note">What stopped respondents from choosing Cashify.</div>', unsafe_allow_html=True)
+
         barriers = parse_multiselect_counts(filtered["Q21B"]) if "Q21B" in filtered.columns else pd.DataFrame(columns=["item", "count", "pct"])
+
         if barriers.empty:
-            st.info("No barrier data available for this view.")
+            if journey == "Buyback":
+                st.markdown('<div class="empty-note">No Buyback barrier responses were captured in the dataset.</div>', unsafe_allow_html=True)
+            else:
+                st.markdown('<div class="empty-note">No barrier data available for this view.</div>', unsafe_allow_html=True)
         else:
             plot_bar(
                 barriers.sort_values("pct", ascending=True),
@@ -888,14 +879,13 @@ with tabs[5]:
                 y="item",
                 orientation="h",
                 height=420,
-                color_sequence=["#ff6b6b"]
+                color_sequence=["#14213d"]
             )
         st.markdown("</div>", unsafe_allow_html=True)
 
     with b2:
         st.markdown('<div class="panel"><h4 style="margin-top:0;">Category Drivers & Fears</h4>', unsafe_allow_html=True)
-
-        st.markdown('<div class="chart-note">Shows what matters most in the category and what hesitations consumers have.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="chart-note">What matters most in the category and what hesitations consumers have.</div>', unsafe_allow_html=True)
 
         driver_col = "Q24" if "Q24" in filtered.columns else ("Q22" if "Q22" in filtered.columns else None)
 
@@ -913,7 +903,7 @@ with tabs[5]:
                 driver_df = parse_multiselect_counts(filtered[driver_col])
 
             if driver_df.empty:
-                st.info("No category driver data available for this view.")
+                st.markdown('<div class="empty-note">No category driver data available for this view.</div>', unsafe_allow_html=True)
             else:
                 plot_bar(
                     driver_df.sort_values("pct", ascending=True).tail(10),
@@ -921,15 +911,15 @@ with tabs[5]:
                     y="item",
                     orientation="h",
                     height=240,
-                    color_sequence=["#21b6a8"]
+                    color_sequence=["#42c7b8"]
                 )
         else:
-            st.info("No category driver variable found in this dataset.")
+            st.markdown('<div class="empty-note">No category driver variable found in this dataset.</div>', unsafe_allow_html=True)
 
         st.markdown("**Biggest category fears / hesitations**")
         fear_df = parse_multiselect_counts(filtered["Q23"]) if "Q23" in filtered.columns else pd.DataFrame(columns=["item", "count", "pct"])
         if fear_df.empty:
-            st.info("No fear data available for this view.")
+            st.markdown('<div class="empty-note">No fear data available for this view.</div>', unsafe_allow_html=True)
         else:
             plot_bar(
                 fear_df.sort_values("pct", ascending=True).tail(10),
@@ -937,7 +927,7 @@ with tabs[5]:
                 y="item",
                 orientation="h",
                 height=240,
-                color_sequence=["#f08a5d"]
+                color_sequence=["#20b8a7"]
             )
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -947,22 +937,12 @@ with tabs[5]:
 with tabs[6]:
     st.markdown('<div class="section-pill">Data View</div>', unsafe_allow_html=True)
     st.subheader("Underlying Data")
-    st.markdown('<div class="section-note">A direct view of the filtered respondent-level data used behind the charts.</div>', unsafe_allow_html=True)
 
-    dvc1, dvc2, dvc3 = st.columns([0.9, 0.9, 1.4])
-
-    with dvc1:
-        st.markdown('<div class="data-box">', unsafe_allow_html=True)
+    d1, d2 = st.columns(2)
+    with d1:
         st.metric("Rows in current view", len(filtered))
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    with dvc2:
-        st.markdown('<div class="data-box">', unsafe_allow_html=True)
+    with d2:
         st.metric("Columns", filtered.shape[1])
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    with dvc3:
-        st.markdown('<div class="data-box small-muted">This tab makes the dashboard feel more end-to-end by showing the actual data slice behind the current filters.</div>', unsafe_allow_html=True)
 
     show_cols = st.multiselect(
         "Select columns to display",
