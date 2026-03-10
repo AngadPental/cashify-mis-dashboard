@@ -66,7 +66,6 @@ h1, h2, h3, h4 {
     box-shadow: var(--shadow);
     margin-bottom: 1rem;
     color: white;
-    overflow: hidden;
 }
 
 .hero h1, .hero h2, .hero h3, .hero p, .hero div {
@@ -374,12 +373,15 @@ def awareness_bundle(df, qmap):
     return tom, spont_agg, aided
 
 def usage_platform_metric(df, journey):
+    """Closest available observable platform-usage stage."""
     if "Q19A" not in df.columns:
         return pd.DataFrame(columns=["platform", "count", "pct"])
+
     vals = df["Q19A"].fillna("").astype(str).str.strip()
     vals = vals[vals.ne("")]
     if vals.empty:
         return pd.DataFrame(columns=["platform", "count", "pct"])
+
     out = vals.value_counts().reset_index()
     out.columns = ["platform", "count"]
     out["pct"] = out["count"] / max(len(df), 1) * 100
@@ -632,30 +634,18 @@ cashify_nps = nps_df.loc[nps_df["platform"].str.lower().eq("cashify"), "nps"].ma
 # =================================================
 st.markdown(f"""
 <div class="hero">
-    <div style="
-        display:flex;
-        align-items:flex-start;
-        justify-content:space-between;
-        gap:1rem;
-        flex-wrap:wrap;
-    ">
-        <div style="flex:1; min-width:320px;">
+    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
+        <div style="flex:1;">
             <h1 style="margin:0 0 0.4rem 0;">Cashify Consumer Intelligence Dashboard</h1>
             <div class="hero-sub">
                 Consumer view for the <b>{journey}</b> journey across awareness, brand strength, consideration, recommendation, source of awareness, and choice drivers.
             </div>
         </div>
-
-        <div style="width:220px; flex:0 0 220px;">
-            <div style="
-                background: rgba(255,255,255,0.96);
-                border-radius: 20px;
-                padding: 0.9rem 1rem 0.85rem 1rem;
-                box-shadow: 0 10px 24px rgba(20, 33, 61, 0.08);
-            ">
-                <div style="font-size:0.78rem; color:#6b7280; margin-bottom:0.18rem;">Filtered Sample</div>
-                <div style="font-size:1.9rem; font-weight:800; color:#14213d; line-height:1.05;">{len(filtered)}</div>
-                <div style="font-size:0.75rem; color:#6b7280; margin-top:0.15rem;">Respondents in current view</div>
+        <div style="min-width:220px; max-width:230px;">
+            <div class="kpi-card">
+                <div class="kpi-label">Filtered Sample</div>
+                <div class="kpi-value">{len(filtered)}</div>
+                <div class="kpi-note">Respondents in current view</div>
             </div>
         </div>
     </div>
