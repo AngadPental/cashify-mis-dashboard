@@ -41,8 +41,8 @@ st.markdown("""
 @st.cache_data
 def load_data():
     try:
-        buyback_df = pd.read_csv('buyback.csv')
-        refurb_df = pd.read_csv('refurbished.csv')
+        buyback_df = pd.read_csv('Live Brand Study - CASHIFY Buyback - Final data.xlsx - Group 6 Data.csv')
+        refurb_df = pd.read_csv('Live Brand Study - CASHIFY - Refurbished_data.xlsx - Group 6 Data.csv')
     except Exception as e:
         st.error(f"Error loading data: Please ensure 'buyback.csv' and 'refurbished.csv' are in the same folder. ({e})")
         return pd.DataFrame(), pd.DataFrame()
