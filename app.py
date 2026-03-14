@@ -284,13 +284,13 @@ def kpi(label, value, note=""):
         unsafe_allow_html=True
     )
 
-def dynamic_summary_lines(cashify_tom, cashify_aided, cashify_consider, cashify_nps, barriers_df, chosen_cashify_df):
+def dynamic_summary_lines(cashify_tom, cashify_aw, cashify_cons, cashify_nps, cashify_barriers, cashify_drivers):
     lines = []
-    if pd.notna(cashify_tom) and pd.notna(cashify_aided):
-        gap = cashify_aided - cashify_tom
-        lines.append(f"Cashify top-of-mind saliency is {cashify_tom:.1f}%, while aided awareness is {cashify_aided:.1f}%, creating a {gap:.1f} point visibility gap between first recall and recognition.")
-    if pd.notna(cashify_consider):
-        lines.append(f"Cashify consideration is {cashify_consider:.1f}% in the current filtered view, showing how often the brand enters the next-time shortlist.")
+    if pd.notna(cashify_tom) and pd.notna(cashify_aw):
+        gap = cashify_aw - cashify_tom
+        lines.append(f"Cashify top-of-mind saliency is {cashify_tom:.1f}%, while aided awareness is {cashify_aw:.1f}%, creating a {gap:.1f} point visibility gap between first recall and recognition.")
+    if pd.notna(cashify_cons):
+        lines.append(f"Cashify consideration is {cashify_cons:.1f}% in the current filtered view, showing how often the brand enters the next-time shortlist.")
     if pd.notna(cashify_nps):
         lines.append(f"Cashify NPS is {cashify_nps:.1f}; this should be read as promoter share minus detractor share among respondents who rated the platform.")
     if barriers_df is not None and not barriers_df.empty:
@@ -559,7 +559,7 @@ with tabs[6]:
     st.subheader("Decision Support Summary")
     cashify_barriers = parse_multiselect_counts(filtered["Q21B"]) if "Q21B" in filtered.columns else pd.DataFrame()
     cashify_drivers = ranking_weighted_scores(filtered, qmap, "Q20")
-    summary_lines = dynamic_summary_lines(cashify_tom, cashify_aided, cashify_consider, cashify_nps, cashify_barriers, cashify_drivers)
+    summary_lines = dynamic_summary_lines(cashify_tom, cashify_aw, cashify_cons, cashify_nps, cashify_barriers, cashify_drivers)
     bullets = "".join([f"<li>{line}</li>" for line in summary_lines]) if summary_lines else "<li>Not enough filtered data is available to generate a dynamic summary.</li>"
     st.markdown(f"""
     <div class="card">
