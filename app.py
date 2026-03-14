@@ -284,7 +284,7 @@ def kpi(label, value, note=""):
         unsafe_allow_html=True
     )
 
-def dynamic_summary_lines(cashify_tom, cashify_aw, cashify_cons, cashify_nps, cashify_barriers, cashify_drivers):
+def dynamic_summary_lines(cashify_tom, cashify_aw, cashify_cons, cashify_nps, barriers_df, chosen_cashify_df):
     lines = []
     if pd.notna(cashify_tom) and pd.notna(cashify_aw):
         gap = cashify_aw - cashify_tom
@@ -559,7 +559,7 @@ with tabs[6]:
     st.subheader("Decision Support Summary")
     cashify_barriers = parse_multiselect_counts(filtered["Q21B"]) if "Q21B" in filtered.columns else pd.DataFrame()
     cashify_drivers = ranking_weighted_scores(filtered, qmap, "Q20")
-    summary_lines = dynamic_summary_lines(cashify_tom, cashify_aw, cashify_cons, cashify_nps, cashify_barriers, cashify_drivers)
+    summary_lines = dynamic_summary_lines(cashify_tom, cashify_aw, cashify_cons, cashify_nps, barriers_df, chosen_cashify_df)
     bullets = "".join([f"<li>{line}</li>" for line in summary_lines]) if summary_lines else "<li>Not enough filtered data is available to generate a dynamic summary.</li>"
     st.markdown(f"""
     <div class="card">
