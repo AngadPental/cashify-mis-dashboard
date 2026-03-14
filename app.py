@@ -284,21 +284,37 @@ def kpi(label, value, note=""):
         unsafe_allow_html=True
     )
 
-def dynamic_summary_lines(cashify_tom, cashify_aw, cashify_cons, cashify_nps, barriers_df, chosen_cashify_df):
+def dynamic_summary_lines(cashify_tom, cashify_aided, cashify_consider, cashify_nps, barriers_df, chosen_cashify_df):
     lines = []
-    if pd.notna(cashify_tom) and pd.notna(cashify_aw):
-        gap = cashify_aw - cashify_tom
-        lines.append(f"Cashify top-of-mind saliency is {cashify_tom:.1f}%, while aided awareness is {cashify_aw:.1f}%, creating a {gap:.1f} point visibility gap between first recall and recognition.")
-    if pd.notna(cashify_cons):
-        lines.append(f"Cashify consideration is {cashify_cons:.1f}% in the current filtered view, showing how often the brand enters the next-time shortlist.")
+
+    if pd.notna(cashify_tom) and pd.notna(cashify_aided):
+        gap = cashify_aided - cashify_tom
+        lines.append(
+            f"Cashify top-of-mind saliency is {cashify_tom:.1f}%, while aided awareness is {cashify_aided:.1f}%, creating a {gap:.1f} point visibility gap between first recall and recognition."
+        )
+
+    if pd.notna(cashify_consider):
+        lines.append(
+            f"Cashify consideration is {cashify_consider:.1f}% in the current filtered view, showing how often the brand enters the next-time shortlist."
+        )
+
     if pd.notna(cashify_nps):
-        lines.append(f"Cashify NPS is {cashify_nps:.1f}; this should be read as promoter share minus detractor share among respondents who rated the platform.")
+        lines.append(
+            f"Cashify NPS is {cashify_nps:.1f}; this should be read as promoter share minus detractor share among respondents who rated the platform."
+        )
+
     if barriers_df is not None and not barriers_df.empty:
         top_barrier = barriers_df.sort_values(["pct", "count"], ascending=[False, False]).iloc[0]
-        lines.append(f"The biggest stated barrier to choosing Cashify is '{top_barrier['item']}', mentioned by {top_barrier['pct']:.1f}% of respondents in this view.")
+        lines.append(
+            f"The biggest stated barrier to choosing Cashify is '{top_barrier['item']}', mentioned by {top_barrier['pct']:.1f}% of respondents in this view."
+        )
+
     if chosen_cashify_df is not None and not chosen_cashify_df.empty:
         top_driver = chosen_cashify_df.sort_values(["weighted_score", "mentions"], ascending=[False, False]).iloc[0]
-        lines.append(f"The strongest reason for choosing Cashify is '{top_driver['factor']}', which ranks highest after giving more weight to higher-ranked mentions.")
+        lines.append(
+            f"The strongest reason for choosing Cashify is '{top_driver['factor']}', which ranks highest after giving more weight to higher-ranked mentions."
+        )
+
     return lines[:5]
 
 st.sidebar.title("Dashboard Controls")
@@ -559,7 +575,14 @@ with tabs[6]:
     st.subheader("Decision Support Summary")
     cashify_barriers = parse_multiselect_counts(filtered["Q21B"]) if "Q21B" in filtered.columns else pd.DataFrame()
     cashify_drivers = ranking_weighted_scores(filtered, qmap, "Q20")
-    summary_lines = dynamic_summary_lines(cashify_tom, cashify_aw, cashify_cons, cashify_nps, barriers_df, chosen_cashify_df)
+    summary_lines = dynamic_summary_lines(
+    cashify_tom,
+    cashify_aw,
+    cashify_cons,
+    cashify_nps,
+    cashify_barriers,
+    cashify_drivers
+)
     bullets = "".join([f"<li>{line}</li>" for line in summary_lines]) if summary_lines else "<li>Not enough filtered data is available to generate a dynamic summary.</li>"
     st.markdown(f"""
     <div class="card">
