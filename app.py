@@ -16,18 +16,20 @@ st.set_page_config(
 st.markdown("""
 <style>
 :root {
-    --bg: #f6f8fb;
+    --bg: #f3fbfa;
     --card: #ffffff;
     --text: #0f172a;
-    --muted: #64748b;
-    --accent: #14b8a6;
-    --border: #e2e8f0;
-    --shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    --muted: #5f6f7d;
+    --accent: #38c6b8;
+    --accent-dark: #1fb5a7;
+    --accent-soft: #e8fbf7;
+    --border: #d8eeea;
+    --shadow: 0 10px 30px rgba(18, 64, 62, 0.08);
 }
-.main { background: linear-gradient(180deg, #f8fafc 0%, #f5f7fb 100%); }
+.main { background: linear-gradient(180deg, #f7fffd 0%, #eefaf7 100%); }
 .block-container { padding-top: 1.3rem; padding-bottom: 2rem; max-width: 1400px; }
 .hero {
-    background: linear-gradient(135deg, rgba(20,184,166,0.12), rgba(14,165,233,0.10));
+    background: linear-gradient(135deg, rgba(56,198,184,0.18), rgba(56,198,184,0.08));
     border: 1px solid var(--border); border-radius: 24px; padding: 1.4rem 1.5rem;
     box-shadow: var(--shadow); margin-bottom: 1rem;
 }
@@ -39,15 +41,15 @@ st.markdown("""
 .kpi-value { color: var(--text); font-size: 1.8rem; font-weight: 700; line-height: 1.1; }
 .kpi-note, .small-note { color: var(--muted); font-size: 0.8rem; }
 .section-tag {
-    display: inline-block; font-size: 0.78rem; color: #0f766e; background: rgba(20,184,166,0.12);
-    border: 1px solid rgba(20,184,166,0.18); padding: 0.22rem 0.55rem; border-radius: 999px; margin-bottom: 0.65rem;
+    display: inline-block; font-size: 0.78rem; color: #0f766e; background: rgba(56,198,184,0.16);
+    border: 1px solid rgba(56,198,184,0.28); padding: 0.22rem 0.55rem; border-radius: 999px; margin-bottom: 0.65rem;
 }
 .insight {
-    border-left: 4px solid var(--accent); background: rgba(255,255,255,0.8);
+    border-left: 4px solid var(--accent); background: rgba(255,255,255,0.88);
     border-radius: 14px; padding: 0.85rem 0.95rem; color: var(--text); margin-top: 0.5rem;
 }
 .footer-note { color: var(--muted); font-size: 0.78rem; margin-top: 1rem; }
-[data-testid="stSidebar"] { background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%); border-right: 1px solid #e5e7eb; }
+[data-testid="stSidebar"] { background: linear-gradient(180deg, #ffffff 0%, #f2fcf9 100%); border-right: 1px solid #d9f0ec; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -282,6 +284,23 @@ def kpi(label, value, note=""):
         unsafe_allow_html=True
     )
 
+def dynamic_summary_lines(cashify_tom, cashify_aided, cashify_consider, cashify_nps, barriers_df, chosen_cashify_df):
+    lines = []
+    if pd.notna(cashify_tom) and pd.notna(cashify_aided):
+        gap = cashify_aided - cashify_tom
+        lines.append(f"Cashify top-of-mind saliency is {cashify_tom:.1f}%, while aided awareness is {cashify_aided:.1f}%, creating a {gap:.1f} point visibility gap between first recall and recognition.")
+    if pd.notna(cashify_consider):
+        lines.append(f"Cashify consideration is {cashify_consider:.1f}% in the current filtered view, showing how often the brand enters the next-time shortlist.")
+    if pd.notna(cashify_nps):
+        lines.append(f"Cashify NPS is {cashify_nps:.1f}; this should be read as promoter share minus detractor share among respondents who rated the platform.")
+    if barriers_df is not None and not barriers_df.empty:
+        top_barrier = barriers_df.sort_values(["pct", "count"], ascending=[False, False]).iloc[0]
+        lines.append(f"The biggest stated barrier to choosing Cashify is '{top_barrier['item']}', mentioned by {top_barrier['pct']:.1f}% of respondents in this view.")
+    if chosen_cashify_df is not None and not chosen_cashify_df.empty:
+        top_driver = chosen_cashify_df.sort_values(["weighted_score", "mentions"], ascending=[False, False]).iloc[0]
+        lines.append(f"The strongest reason for choosing Cashify is '{top_driver['factor']}', which ranks highest after giving more weight to higher-ranked mentions.")
+    return lines[:5]
+
 st.sidebar.title("Dashboard Controls")
 use_upload = st.sidebar.toggle("Use uploaded Excel files", value=False)
 
@@ -432,11 +451,14 @@ with tabs[1]:
 with tabs[2]:
     st.markdown('<div class="section-tag">Funnel</div>', unsafe_allow_html=True)
     st.subheader("Brand Health Funnel")
+    st.markdown("<div class='small-note'>This view compares how each platform moves through four stages: <b>Awareness</b> (recognized from the prompted list), <b>Familiarity</b> (respondent says they know the platform well enough), <b>Intent / Recent</b> (platform selected for next-time consideration), and <b>NPS Base</b> (respondents who gave that platform an NPS rating). Read left to right: a larger drop between stages means weaker conversion.</div>", unsafe_allow_html=True)
     funnel_df = build_health_funnel(filtered, qmap)
     if not funnel_df.empty:
         top_platforms = funnel_df.groupby("platform")["pct"].max().sort_values(ascending=False).head(6).index.tolist()
-        chart_df = funnel_df[funnel_df["platform"].isin(top_platforms)]
-        fig = px.line(chart_df, x="stage", y="pct", color="platform", markers=True, height=420)
+        chart_df = funnel_df[funnel_df["platform"].isin(top_platforms)].copy()
+        stage_order = ["Awareness", "Familiarity", "Intent / Recent", "NPS Base"]
+        chart_df["stage"] = pd.Categorical(chart_df["stage"], categories=stage_order, ordered=True)
+        fig = px.bar(chart_df, x="stage", y="pct", color="platform", barmode="group", height=430, text_auto=".1f")
         fig.update_layout(
             margin=dict(l=10, r=10, t=10, b=10),
             plot_bgcolor="rgba(0,0,0,0)",
@@ -446,24 +468,23 @@ with tabs[2]:
             legend_title_text=""
         )
         st.plotly_chart(fig, use_container_width=True)
-        st.dataframe(
-            funnel_df.pivot_table(index="platform", columns="stage", values="pct", fill_value=0).reset_index(),
-            use_container_width=True,
-            hide_index=True
-        )
+        st.markdown("<div class='insight'><b>How to read this:</b> Awareness should usually be the widest stage. Familiarity shows whether people know the platform beyond recognition. Intent / Recent shows shortlist conversion. NPS Base shows how many respondents are actually in a position to rate the platform.</div>", unsafe_allow_html=True)
+        stage_table = funnel_df.pivot_table(index="platform", columns="stage", values="pct", fill_value=0).reset_index()
+        st.dataframe(stage_table, use_container_width=True, hide_index=True)
     else:
         st.info("Not enough data to show the funnel.")
 
 with tabs[3]:
     st.markdown('<div class="section-tag">Conversion</div>', unsafe_allow_html=True)
     st.subheader("Consideration & NPS")
+    st.markdown("<div class='small-note'>Consideration shows which platforms make it into the respondent's <b>next-time shortlist</b>. NPS shows <b>promoters minus detractors</b> among respondents who rated each platform on a 0-10 recommendation scale.</div>", unsafe_allow_html=True)
     l1, l2 = st.columns(2)
     with l1:
-        st.markdown('<div class="card"><h4 style="margin-top:0;">Consideration Set</h4>', unsafe_allow_html=True)
+        st.markdown('<div class="card"><h4 style="margin-top:0;">Consideration Set</h4><div class="small-note" style="margin-bottom:0.6rem;">Higher values mean the platform is more likely to be considered the next time the respondent buys or sells in this category.</div>', unsafe_allow_html=True)
         plot_bar(consider_df.sort_values("pct", ascending=True), x="pct", y="platform", orientation="h", height=420)
         st.markdown('</div>', unsafe_allow_html=True)
     with l2:
-        st.markdown('<div class="card"><h4 style="margin-top:0;">NPS by Platform</h4>', unsafe_allow_html=True)
+        st.markdown('<div class="card"><h4 style="margin-top:0;">NPS by Platform</h4><div class="small-note" style="margin-bottom:0.6rem;">NPS = % Promoters (9-10) minus % Detractors (0-6). Positive values indicate more advocates than critics.</div>', unsafe_allow_html=True)
         plot_bar(nps_df.sort_values("nps", ascending=True), x="nps", y="platform", orientation="h", height=420)
         st.markdown('</div>', unsafe_allow_html=True)
     if not nps_df.empty:
@@ -474,6 +495,7 @@ with tabs[3]:
             value_name="count"
         )
         st.markdown("#### Promoter / Passive / Detractor Split")
+        st.markdown("<div class='small-note'>This split shows the count of respondents behind each platform's NPS score, so managers can see whether a weak score is driven by many detractors or simply a small rating base.</div>", unsafe_allow_html=True)
         plot_bar(melt, x="platform", y="count", color="segment", height=360)
 
 with tabs[4]:
@@ -494,33 +516,34 @@ with tabs[4]:
 with tabs[5]:
     st.markdown('<div class="section-tag">Drivers</div>', unsafe_allow_html=True)
     st.subheader("Choice Drivers, Barriers & Category Fears")
+    st.markdown("<div class='small-note'>For rank-based questions, the dashboard uses a <b>weighted rank score</b>: higher-ranked mentions receive more points than lower-ranked mentions. This helps identify not just how often a factor appears, but how strongly it matters.</div>", unsafe_allow_html=True)
     d1, d2 = st.columns(2)
     with d1:
-        st.markdown('<div class="card"><h4 style="margin-top:0;">Why Cashify was chosen</h4>', unsafe_allow_html=True)
+        st.markdown('<div class="card"><h4 style="margin-top:0;">Why Cashify was chosen</h4><div class="small-note" style="margin-bottom:0.6rem;">Bars show weighted rank score. A factor scores higher when it is mentioned more often and ranked closer to #1.</div>', unsafe_allow_html=True)
         chosen_cashify = ranking_weighted_scores(filtered, qmap, "Q20")
         if chosen_cashify.empty:
             st.info("No rank-based Cashify choice data available in the current view.")
         else:
             plot_bar(chosen_cashify.sort_values("weighted_score", ascending=True), x="weighted_score", y="factor", orientation="h", height=420)
-            st.dataframe(chosen_cashify, use_container_width=True, hide_index=True)
+            st.markdown("<div class='insight'>Weighted rank score is used here instead of raw count because rank order matters: being chosen as a top reason should count more than appearing in a lower rank.</div>", unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
     with d2:
-        st.markdown('<div class="card"><h4 style="margin-top:0;">Why another platform was chosen</h4>', unsafe_allow_html=True)
+        st.markdown('<div class="card"><h4 style="margin-top:0;">Why another platform was chosen</h4><div class="small-note" style="margin-bottom:0.6rem;">Bars show weighted rank score, which combines how often a factor was mentioned with how highly it was ranked.</div>', unsafe_allow_html=True)
         chosen_other = ranking_weighted_scores(filtered, qmap, "Q21A")
         if chosen_other.empty:
             st.info("No competitor rank-based data available in the current view.")
         else:
             plot_bar(chosen_other.sort_values("weighted_score", ascending=True), x="weighted_score", y="factor", orientation="h", height=420)
-            st.dataframe(chosen_other, use_container_width=True, hide_index=True)
+            st.markdown("<div class='insight'>This view helps separate broad hygiene factors from true decision drivers by giving greater weight to the reasons respondents placed near the top.</div>", unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
     b1, b2 = st.columns(2)
     with b1:
-        st.markdown('<div class="card"><h4 style="margin-top:0;">Barriers to choosing Cashify</h4>', unsafe_allow_html=True)
+        st.markdown('<div class="card"><h4 style="margin-top:0;">Barriers to choosing Cashify</h4><div class="small-note" style="margin-bottom:0.6rem;">These are the stated deterrents that stopped respondents from picking Cashify.</div>', unsafe_allow_html=True)
         barriers = parse_multiselect_counts(filtered["Q21B"]) if "Q21B" in filtered.columns else pd.DataFrame()
         plot_bar(barriers.sort_values("pct", ascending=True), x="pct", y="item", orientation="h", height=380)
         st.markdown('</div>', unsafe_allow_html=True)
     with b2:
-        st.markdown('<div class="card"><h4 style="margin-top:0;">Category Drivers & Fears</h4>', unsafe_allow_html=True)
+        st.markdown('<div class="card"><h4 style="margin-top:0;">Category Drivers & Fears</h4><div class="small-note" style="margin-bottom:0.6rem;">This panel shows what matters most in the category overall and what consumers fear most in the process.</div>', unsafe_allow_html=True)
         driver_col = "Q24" if "Q24" in filtered.columns else ("Q22" if "Q22" in filtered.columns else None)
         if driver_col:
             driver_df = parse_multiselect_counts(filtered[driver_col])
@@ -534,31 +557,16 @@ with tabs[5]:
 with tabs[6]:
     st.markdown('<div class="section-tag">Action</div>', unsafe_allow_html=True)
     st.subheader("Decision Support Summary")
-    c1, c2 = st.columns(2)
-    with c1:
-        st.markdown("""
-        <div class="card">
-            <h4 style="margin-top:0;">Summary</h4>
-            <ul>
-                <li>Use awareness views to identify whether Cashify has a saliency problem or a conversion problem.</li>
-                <li>Use the funnel to pinpoint where Cashify loses users: awareness, familiarity, or consideration.</li>
-                <li>Use NPS to determine whether the main issue lies in experience or pre-usage conversion friction.</li>
-                <li>Use source data to decide which communication channels deserve heavier investment.</li>
-                <li>Use drivers and barriers to shape messaging, trust-builders, and service design improvements.</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
-    with c2:
-        st.markdown("""
-        <div class="card">
-            <h4 style="margin-top:0;">Way Forward</h4>
-            <ul>
-                <li><b>Build trust cues harder:</b> foreground quality checks, verification, warranty, pricing transparency, or data safety by journey.</li>
-                <li><b>Close the familiarity gap:</b> if aided awareness is high but familiarity is low, invest in explanatory communication, not only reach.</li>
-                <li><b>Win shortlist inclusion:</b> if awareness exists but consideration is weak, sharpen positioning around the top visible category drivers.</li>
-                <li><b>Fix the biggest barrier first:</b> the barrier chart gives the cleanest first management priority.</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
-
-st.markdown('<div class="footer-note">Built for a classroom MIS live project. With the current sample size, segment cuts should be interpreted directionally.</div>', unsafe_allow_html=True)
+    cashify_barriers = parse_multiselect_counts(filtered["Q21B"]) if "Q21B" in filtered.columns else pd.DataFrame()
+    cashify_drivers = ranking_weighted_scores(filtered, qmap, "Q20")
+    summary_lines = dynamic_summary_lines(cashify_tom, cashify_aided, cashify_consider, cashify_nps, cashify_barriers, cashify_drivers)
+    bullets = "".join([f"<li>{line}</li>" for line in summary_lines]) if summary_lines else "<li>Not enough filtered data is available to generate a dynamic summary.</li>"
+    st.markdown(f"""
+    <div class="card">
+        <h4 style="margin-top:0;">Dynamic Summary</h4>
+        <div class="small-note" style="margin-bottom:0.6rem;">This summary updates with the current filters so managers can interpret the live view without locking the dashboard into a fixed recommendation.</div>
+        <ul>
+            {bullets}
+        </ul>
+    </div>
+    """, unsafe_allow_html=True)
