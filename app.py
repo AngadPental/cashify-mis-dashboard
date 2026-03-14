@@ -51,8 +51,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-BUYBACK_DEFAULT = "Live Brand Study - CASHIFY Buyback - Final data.xlsx"
-REFURB_DEFAULT = "Live Brand Study - CASHIFY - Refurbished_data.xlsx"
+BUYBACK_DEFAULT = "data/Live Brand Study - CASHIFY Buyback - Final data.xlsx"
+REFURB_DEFAULT = "data/Live Brand Study - CASHIFY - Refurbished_data.xlsx"
 
 def split_multi(value):
     if pd.isna(value):
